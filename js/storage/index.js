@@ -37,6 +37,18 @@ class StorageService {
   }
 
   /**
+   * Delete the API key from storage
+   * @returns {Promise<void>}
+   */
+  deleteApiKey() {
+    return new Promise((resolve) => {
+      chrome.storage.local.remove(STORAGE_KEY_API, () => {
+        resolve();
+      });
+    });
+  }
+
+  /**
    * Get saved job analysis results for a specific URL
    * @param {string} url - The URL to get results for
    * @returns {Promise<Object|null>} The results or null if not found

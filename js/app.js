@@ -37,13 +37,20 @@ class JobScopeApp {
       await this.loadConfiguration();
 
       // Check if API key exists
-      await this.checkApiKey();
+      const hasApiKey = await this.checkApiKey();
 
-      // Get current tab URL
-      await this.getCurrentTabUrl();
+      // Only proceed with these steps if we have an API key
+      if (hasApiKey) {
+        // Get current tab URL
+        await this.getCurrentTabUrl();
 
-      // Check for saved results for current URL
-      await this.checkSavedResults();
+        // Check for saved results for current URL
+        await this.checkSavedResults();
+      } else {
+        // Ensure results are hidden when there's no API key
+        this.elements.resultsSection.classList.add("hidden");
+        this.elements.parseJobBtn.classList.add("hidden");
+      }
     } catch (error) {
       console.error("Error initializing application:", error);
     }
@@ -68,6 +75,7 @@ class JobScopeApp {
       tabContents: document.querySelectorAll(".tab-content"),
       settingsApiKeyInput: document.getElementById("settingsApiKey"),
       updateApiKeyBtn: document.getElementById("updateApiKey"),
+      deleteApiKeyBtn: document.getElementById("deleteApiKey"),
       parseJobBtn: document.getElementById("parseJob"),
       retryBtn: document.getElementById("retry"),
 
@@ -94,10 +102,25 @@ class JobScopeApp {
       this.saveApiKey(this.elements.settingsApiKeyInput.value)
     );
 
+    // Add delete API key button handler
+    if (this.elements.deleteApiKeyBtn) {
+      this.elements.deleteApiKeyBtn.addEventListener("click", () =>
+        this.deleteApiKey()
+      );
+    }
+
     // Settings
-    this.elements.settingsIcon.addEventListener("click", () =>
-      this.elements.settingsPanel.classList.toggle("hidden")
-    );
+    this.elements.settingsIcon.addEventListener("click", async () => {
+      const apiKey = await storageService.getApiKey();
+
+      if (apiKey) {
+        // Toggle settings panel visibility
+        this.elements.settingsPanel.classList.toggle("hidden");
+
+        // Toggle results visibility based on settings panel state
+        this.elements.resultsSection.classList.toggle("hidden");
+      }
+    });
 
     // Tab navigation
     this.elements.tabButtons.forEach((button) => {
@@ -185,7 +208,11 @@ class JobScopeApp {
       uiRenderer.showError(
         "Please enter your OpenAI API key in settings first."
       );
-      this.elements.settingsPanel.classList.remove("hidden");
+      this.elements.apiKeySection.classList.remove("hidden");
+      // Hide results
+      this.elements.resultsSection.classList.add("hidden");
+      // Hide parse button
+      this.elements.parseJobBtn.classList.add("hidden");
       return;
     }
 
@@ -221,6 +248,7 @@ class JobScopeApp {
 
   /**
    * Check if API key exists in storage
+   * @returns {Promise<boolean>} True if API key exists, false otherwise
    */
   async checkApiKey() {
     const apiKey = await storageService.getApiKey();
@@ -228,6 +256,14 @@ class JobScopeApp {
     if (apiKey) {
       this.elements.apiKeySection.classList.add("hidden");
       this.elements.settingsApiKeyInput.value = apiKey;
+      return true;
+    } else {
+      // Show API key input section
+      this.elements.apiKeySection.classList.remove("hidden");
+      // Hide results and parse button
+      this.elements.resultsSection.classList.add("hidden");
+      this.elements.parseJobBtn.classList.add("hidden");
+      return false;
     }
   }
 
@@ -242,9 +278,30 @@ class JobScopeApp {
 
     await storageService.saveApiKey(apiKey);
 
+    // Hide the API key input section
     this.elements.apiKeySection.classList.add("hidden");
+
+    // Update the API key in settings
     this.elements.settingsApiKeyInput.value = apiKey;
+
+    // Hide settings panel if it was showing
+    this.elements.settingsPanel.classList.add("hidden");
+
+    // Show the Parse button to allow the user to start using the extension
+    this.elements.parseJobBtn.classList.remove("hidden");
+
     alert("API key saved successfully!");
+
+    // If we don't have the current URL yet, get it now
+    if (!this.currentUrl) {
+      try {
+        await this.getCurrentTabUrl();
+        // Check if we already have results for this URL
+        await this.checkSavedResults();
+      } catch (error) {
+        console.error("Error initializing after API key save:", error);
+      }
+    }
   }
 
   /**
@@ -286,6 +343,21 @@ class JobScopeApp {
         );
       });
     });
+  }
+
+  /**
+   * Delete API key from storage
+   */
+  async deleteApiKey() {
+    if (confirm("Are you sure you want to delete your API key?")) {
+      await storageService.deleteApiKey();
+      this.elements.settingsApiKeyInput.value = "";
+      this.elements.apiKeyInput.value = "";
+      this.elements.apiKeySection.classList.remove("hidden");
+      alert("API key has been deleted.");
+      // Toggle settings panel visibility
+      this.elements.settingsPanel.classList.add("hidden");
+    }
   }
 }
 
