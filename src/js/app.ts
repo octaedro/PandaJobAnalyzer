@@ -171,10 +171,11 @@ export class JobScopeApp {
 		toggleLoadingState(true, this.elements);
 
 		try {
-			const content = await this.getCurrentTabContent();
+			const jobContent = await this.getCurrentTabContent();
 			console.log('handleParseJob: Got content, calling OpenAI...');
+
 			const results = await openAIService.analyzeJobListing(
-				content,
+				jobContent,
 				apiKey
 			);
 			console.log('handleParseJob: OpenAI results received:', results);
@@ -202,7 +203,7 @@ export class JobScopeApp {
 
 	/**
 	 * Injects content script if needed and gets content from the current tab.
-	 * @returns {Promise<string>} A promise resolving to the job listing content from the current tab.
+	 * @returns {Promise<string>} A promise resolving to the job listing content string.
 	 */
 	getCurrentTabContent(): Promise<string> {
 		return new Promise((resolve, reject) => {
@@ -248,18 +249,22 @@ export class JobScopeApp {
 						'Response received from content script:',
 						response
 					);
-					if (response && response.success && response.data) {
+					if (
+						response &&
+						response.success &&
+						typeof response.data === 'string'
+					) {
 						console.log('Content received successfully.');
 						resolve(response.data);
 					} else {
 						console.error(
-							'Invalid or unsuccessful response from content script:',
+							'Invalid or unsuccessful response structure from content script (expecting string data):',
 							response
 						);
 						reject(
 							new Error(
 								response?.error ||
-									'Failed to get job content from page after injection.'
+									'Invalid or missing job content string received from content script.'
 							)
 						);
 					}

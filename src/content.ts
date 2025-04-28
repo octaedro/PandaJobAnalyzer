@@ -13,43 +13,42 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 			let jobContent = '';
 
 			// Common job listing selectors for various job sites
+			// Prioritize more specific IDs/classes, then common structural tags
 			const jobSelectors = [
-				// Glassdoor (New, more specific)
-				'div[class*="JobDetails_jobDescription"]', // Using contains selector for robustness
-				// LinkedIn
-				'.jobs-description',
-				'.jobs-description-content',
-				'.jobs-box__html-content',
 				// Indeed
 				'#jobDescriptionText',
 				'.jobsearch-jobDescriptionText',
-				// Glassdoor
+				// LinkedIn
+				'.jobs-description__content .jobs-description-content__text', // More specific LinkedIn
+				'.jobs-description-content__text',
+				'.jobs-description-content',
+				'.jobs-box__html-content',
+				'.jobs-description',
+				// Glassdoor (New generic + old ones)
+				'div[class*="JobDetails_jobDescription"]',
 				'.jobDescriptionContent',
-				'.desc',
-				'.empInfo',
-				// Monster
-				'.job-description',
 				// ZipRecruiter
 				'.job_description',
-				// RemoteOK
-				'.description',
-				// WeWorkRemotely
-				'.listing-container',
+				// Stack Overflow Jobs
+				'.job-details__content .s-prose', // More specific SO
+				'.job-details__content',
 				// AngelList/Wellfound
 				'.job-description',
 				'.decorated-job-posting',
-				// Stack Overflow Jobs
-				'.job-details__content',
-				// GitHub Jobs
-				'.markdown-body',
-				// Generic selectors (try last)
+				// Generic data attributes
 				'[data-testid="job-description"]',
 				'[data-automation="jobDescription"]',
 				'[itemprop="description"]',
+				// Common class names
+				'.job-details',
+				'.job-description',
+				'.jobDescription',
+				'.job-content',
+				'.description',
+				// Structural elements (less reliable)
 				'article',
 				'main',
 				'.main-content',
-				'.job-content',
 			];
 
 			// Try to find job content using selectors
@@ -102,7 +101,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 			}
 
 			console.log('Content script sending response.'); // Debug log
-			// Send the extracted content back under the 'data' key for consistency
+			// Revert to sending only the job content string
 			sendResponse({ success: true, data: jobContent });
 		} catch (error) {
 			console.error('Error in content script:', error); // Debug log

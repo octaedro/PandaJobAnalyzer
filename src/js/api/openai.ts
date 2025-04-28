@@ -109,7 +109,6 @@ class OpenAIService {
 			throw new Error('Configuration not set');
 		}
 
-		// Replace {{content}} in template with actual content
 		const userPrompt = this.config.userPromptTemplate.replace(
 			'{{content}}',
 			content
