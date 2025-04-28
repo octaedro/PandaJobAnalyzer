@@ -8,6 +8,7 @@
  */
 import openAIService from '../js/api/openai';
 import storageService from '../js/storage/index';
+import type { AnalysisResult } from '../js/api/openai';
 
 /**
  * Main application class
@@ -77,6 +78,7 @@ class JobScopeApp {
 
 	/**
 	 * Cache all DOM elements for better performance
+	 * @returns {object} An object containing cached DOM elements.
 	 */
 	cacheDOMElements() {
 		return {
@@ -286,8 +288,9 @@ class JobScopeApp {
 
 	/**
 	 * Get the current tab URL
+	 * @returns {Promise<string>} A promise resolving to the current tab's URL.
 	 */
-	async getCurrentTabUrl(): Promise<string> {
+	getCurrentTabUrl(): Promise<string> {
 		return new Promise((resolve, reject) => {
 			chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
 				if (chrome.runtime.lastError) {
@@ -305,6 +308,7 @@ class JobScopeApp {
 
 	/**
 	 * Check API key from storage
+	 * @returns {Promise<boolean>} A promise resolving to true if an API key exists, false otherwise.
 	 */
 	async checkApiKey(): Promise<boolean> {
 		const apiKey = await storageService.getApiKey();
@@ -338,6 +342,7 @@ class JobScopeApp {
 
 	/**
 	 * Check for saved results for the current URL
+	 * @returns {Promise<boolean>} A promise resolving to true if saved results were found and displayed, false otherwise.
 	 */
 	async checkSavedResults(): Promise<boolean> {
 		if (!this.currentUrl) {
@@ -370,7 +375,7 @@ class JobScopeApp {
 
 	/**
 	 * Handle tab click events for main results
-	 * @param event
+	 * @param {MouseEvent} event - The mouse click event.
 	 */
 	handleTabClick(event: MouseEvent): void {
 		const target = event.currentTarget as HTMLElement;
@@ -399,23 +404,27 @@ class JobScopeApp {
 
 	/**
 	 * Display results in the UI
-	 * @param results
+	 * @param {unknown} resultsData - The analysis results object.
 	 */
-	displayResults(results: any): void {
-		console.log('Displaying results:', results);
+	displayResults(resultsData: unknown): void {
+		console.log('Displaying results:', resultsData);
 
-		if (!results) {
-			// Handle null/undefined results
-			console.error('displayResults called with null results');
+		// Type guard for resultsData
+		if (typeof resultsData !== 'object' || resultsData === null) {
+			// Handle null/undefined/non-object results
+			console.error('displayResults called with invalid data');
 			if (this.elements.jobContentEl) {
 				this.elements.jobContentEl.innerHTML =
-					'<p>Error: No results data found.</p>';
+					'<p>Error: No valid results data found.</p>';
 			}
 			if (this.elements.companyContentEl) {
 				this.elements.companyContentEl.innerHTML = '';
 			} // Clear company tab too
 			return;
 		}
+
+		// Cast to AnalysisResult after the type guard
+		const results = resultsData as AnalysisResult;
 
 		// Clear previous content
 		if (this.elements.jobContentEl) {
@@ -430,13 +439,13 @@ class JobScopeApp {
 		let foundStructuredJobData = false;
 		let foundStructuredCompanyData = false;
 
-		// --- Populate Job Details ---
+		// --- Populate Job Details (with type safety) ---
 		if (results.jobLocation) {
 			jobHtml += `<h4>Location:</h4><p>${Array.isArray(results.jobLocation) ? results.jobLocation.join(', ') : results.jobLocation}</p>`;
 			foundStructuredJobData = true;
 		}
 		if (
-			results.salaryRange &&
+			results.salaryRange && // Check if salaryRange exists and is not null
 			(results.salaryRange.min || results.salaryRange.max)
 		) {
 			jobHtml += `<h4>Salary Range:</h4><p>${results.salaryRange.min || 'N/A'} - ${results.salaryRange.max || 'N/A'}</p>`;
@@ -460,7 +469,7 @@ class JobScopeApp {
 		}
 		// Add more job fields here if needed...
 
-		// --- Populate Company Details ---
+		// --- Populate Company Details (with type safety) ---
 		if (results.companySummary) {
 			companyHtml += `<h4>Summary:</h4><p>${results.companySummary}</p>`;
 			foundStructuredCompanyData = true;
@@ -500,7 +509,7 @@ class JobScopeApp {
 
 	/**
 	 * Toggles the loading state UI
-	 * @param isLoading
+	 * @param {boolean} isLoading - Whether the loading state should be active.
 	 */
 	toggleLoadingState(isLoading: boolean): void {
 		if (this.elements.loadingSpinner) {
@@ -536,9 +545,10 @@ class JobScopeApp {
 		if (!this.currentUrl) {
 			try {
 				await this.getCurrentTabUrl();
-			} catch (error: any) {
+			} catch (error: unknown) {
 				showMessage(
-					'Could not get current tab URL. Please reload the page.'
+					'Could not get current tab URL. Please reload the page. ' +
+						(error as Error).message
 				);
 				return;
 			}
@@ -584,9 +594,12 @@ class JobScopeApp {
 			if (this.elements.parseJobSection) {
 				this.elements.parseJobSection.classList.add('hidden');
 			} // Ensure parse button is hidden after success
-		} catch (error: any) {
+		} catch (error: unknown) {
 			console.error('Error during parsing:', error);
-			showMessage(`Error analyzing job: ${error.message || error}`);
+			// Check if error is an instance of Error before accessing message
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			showMessage(`Error analyzing job: ${errorMessage}`);
 			this.toggleLoadingState(false);
 			// Show parse button again on error?
 			if (this.elements.parseJobSection) {
@@ -597,87 +610,79 @@ class JobScopeApp {
 
 	/**
 	 * Injects content script if needed and gets content from the current tab.
+	 * @returns {Promise<string>} A promise resolving to the job listing content from the current tab.
 	 */
 	getCurrentTabContent(): Promise<string> {
-		return new Promise(async (resolve, reject) => {
+		// Remove async from promise executor
+		return new Promise((resolve, reject) => {
 			let activeTabId: number = -1; // Initialize to avoid potential error
-			try {
-				// 1. Get Active Tab ID
-				const tabs = await chrome.tabs.query({
-					active: true,
-					currentWindow: true,
-				});
-				if (tabs.length === 0 || !tabs[0].id) {
-					return reject(
-						new Error('No active tab found or tab has no ID.')
+			// Use async/await pattern inside the promise executor logic
+			(async () => {
+				try {
+					// 1. Get Active Tab ID
+					const tabs = await chrome.tabs.query({
+						active: true,
+						currentWindow: true,
+					});
+					if (tabs.length === 0 || !tabs[0].id) {
+						return reject(
+							new Error('No active tab found or tab has no ID.')
+						);
+					}
+					activeTabId = tabs[0].id;
+					console.log(
+						`Attempting to get content from tab ${activeTabId}`
 					);
-				}
-				activeTabId = tabs[0].id;
-				console.log(
-					`Attempting to get content from tab ${activeTabId}`
-				);
 
-				// 2. Inject content.js programmatically
-				console.log(
-					`Injecting content script into tab ${activeTabId}...`
-				);
-				await chrome.scripting.executeScript({
-					target: { tabId: activeTabId },
-					files: ['content.js'], // Path relative to extension root (dist)
-				});
-				console.log(
-					`Content script injected successfully into tab ${activeTabId}.`
-				);
+					// 2. Inject content.js programmatically
+					console.log(
+						`Injecting content script into tab ${activeTabId}...`
+					);
+					await chrome.scripting.executeScript({
+						target: { tabId: activeTabId },
+						files: ['content.js'], // Path relative to extension root (dist)
+					});
+					console.log(
+						`Content script injected successfully into tab ${activeTabId}.`
+					);
 
-				// 3. Send message to the now-injected script
-				console.log(
-					`Sending parseJob message to tab ${activeTabId}...`
-				);
-				const response = await chrome.tabs.sendMessage(activeTabId, {
-					action: 'parseJob',
-				});
+					// 3. Send message to the now-injected script
+					console.log(
+						`Sending parseJob message to tab ${activeTabId}...`
+					);
+					const response = await chrome.tabs.sendMessage(
+						activeTabId,
+						{
+							action: 'parseJob',
+						}
+					);
 
-				// 4. Process response
-				console.log('Response received from content script:', response);
-				if (response && response.success && response.data) {
-					console.log('Content received successfully.');
-					resolve(response.data);
-				} else {
-					console.error(
-						'Invalid or unsuccessful response from content script:',
+					// 4. Process response
+					console.log(
+						'Response received from content script:',
 						response
 					);
-					reject(
-						new Error(
-							response?.error ||
-								'Failed to get job content from page after injection.'
-						)
+					if (response && response.success && response.data) {
+						console.log('Content received successfully.');
+						resolve(response.data);
+					} else {
+						console.error(
+							'Invalid or unsuccessful response from content script:',
+							response
+						);
+						reject(
+							new Error(
+								response?.error ||
+									'Failed to get job content from page after injection.'
+							)
+						);
+					}
+				} catch {
+					showMessage(
+						'Could not get current tab URL. Please reload the page.'
 					);
 				}
-			} catch (error: any) {
-				console.error(
-					`Error in getCurrentTabContent for tab ${activeTabId}:`,
-					error
-				);
-				// Check for specific injection errors
-				if (error.message.includes('Cannot access contents of url')) {
-					reject(
-						new Error(
-							`Cannot access this page (${this.currentUrl}). Check host permissions or page restrictions.`
-						)
-					);
-				} else if (error.message.includes('No tab with id')) {
-					reject(
-						new Error('The tab was closed or could not be found.')
-					);
-				} else {
-					reject(
-						new Error(
-							`Could not communicate with content script: ${error.message}`
-						)
-					);
-				}
-			}
+			})().catch(reject); // Catch errors from the async IIFE and reject the promise
 		});
 	}
 
@@ -697,6 +702,10 @@ class JobScopeApp {
 }
 
 // --- Global Helper ---
+/**
+ *
+ * @param {string} message - The message to display.
+ */
 function showMessage(message: string): void {
 	alert(message);
 }

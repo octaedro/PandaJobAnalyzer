@@ -26,6 +26,7 @@ module.exports = {
 		es2021: true, // ES2021 environment (ES12)
 		node: true, // Allows Node variables (require, module, etc.)
 		jquery: true, // jQuery environment (defines $ and jQuery as globals)
+		webextensions: true, // Define chrome.* APIs environment
 	},
 	plugins: [
 		'@wordpress', // WordPress rules plugin

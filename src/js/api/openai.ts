@@ -12,7 +12,7 @@ interface OpenAIConfig {
 	userPromptTemplate: string;
 }
 
-interface AnalysisResult {
+export interface AnalysisResult {
 	jobLocation?: string[] | string;
 	requiredSkills?: string[];
 	niceToHaveSkills?: string[];
@@ -22,7 +22,7 @@ interface AnalysisResult {
 		min?: string;
 		max?: string;
 	} | null;
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 interface OpenAIMessage {
