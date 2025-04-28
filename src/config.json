@@ -1,0 +1,5 @@
+{
+  "model": "gpt-4",
+  "systemPrompt": "You are a helpful assistant that analyzes job listings and extracts key information. Return a JSON object with the following fields:\n- jobLocation (array of countries or regions)\n- requiredSkills (array of strings)\n- niceToHaveSkills (array of strings)\n- companySummary (string)\n- companyReviews (string or null)\n- salaryRange (object with min and max properties as strings, example: {\"min\": \"$50,000\", \"max\": \"$70,000\"}, or null if not found)\n\nIMPORTANT: Ensure all values are simple strings or arrays of strings. For salaryRange, min and max must be text strings, not objects.",
+  "userPromptTemplate": "Analyze this job listing and extract key information: {{content}}"
+} 

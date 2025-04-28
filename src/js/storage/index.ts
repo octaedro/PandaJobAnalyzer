@@ -7,6 +7,24 @@
 const STORAGE_KEY_API = "openaiApiKey";
 const STORAGE_KEY_RESULTS = "jobScopeResults";
 
+// Define result types
+export interface AnalysisResult {
+  jobLocation?: string[] | string;
+  requiredSkills?: string[];
+  niceToHaveSkills?: string[];
+  companySummary?: string;
+  companyReviews?: string | null;
+  salaryRange?: {
+    min?: string;
+    max?: string;
+  } | null;
+  [key: string]: any;
+}
+
+export interface StoredResults {
+  [url: string]: AnalysisResult;
+}
+
 /**
  * Storage Service
  */
@@ -15,7 +33,7 @@ class StorageService {
    * Get the API key from storage
    * @returns {Promise<string|null>} The API key or null if not found
    */
-  getApiKey() {
+  getApiKey(): Promise<string | null> {
     return new Promise((resolve) => {
       chrome.storage.local.get([STORAGE_KEY_API], (result) => {
         resolve(result[STORAGE_KEY_API] || null);
@@ -28,7 +46,7 @@ class StorageService {
    * @param {string} apiKey - The API key to save
    * @returns {Promise<void>}
    */
-  saveApiKey(apiKey) {
+  saveApiKey(apiKey: string): Promise<void> {
     return new Promise((resolve) => {
       chrome.storage.local.set({ [STORAGE_KEY_API]: apiKey }, () => {
         resolve();
@@ -40,7 +58,7 @@ class StorageService {
    * Delete the API key from storage
    * @returns {Promise<void>}
    */
-  deleteApiKey() {
+  deleteApiKey(): Promise<void> {
     return new Promise((resolve) => {
       chrome.storage.local.remove(STORAGE_KEY_API, () => {
         resolve();
@@ -51,12 +69,12 @@ class StorageService {
   /**
    * Get saved job analysis results for a specific URL
    * @param {string} url - The URL to get results for
-   * @returns {Promise<Object|null>} The results or null if not found
+   * @returns {Promise<AnalysisResult|null>} The results or null if not found
    */
-  getResults(url) {
+  getResults(url: string): Promise<AnalysisResult | null> {
     return new Promise((resolve) => {
       chrome.storage.local.get([STORAGE_KEY_RESULTS], (result) => {
-        const savedResults = result[STORAGE_KEY_RESULTS] || {};
+        const savedResults = result[STORAGE_KEY_RESULTS] as StoredResults || {};
         resolve(savedResults[url] || null);
       });
     });
@@ -65,13 +83,13 @@ class StorageService {
   /**
    * Save job analysis results for a specific URL
    * @param {string} url - The URL to save results for
-   * @param {Object} results - The results to save
+   * @param {AnalysisResult} results - The results to save
    * @returns {Promise<void>}
    */
-  saveResults(url, results) {
+  saveResults(url: string, results: AnalysisResult): Promise<void> {
     return new Promise((resolve) => {
       chrome.storage.local.get([STORAGE_KEY_RESULTS], (result) => {
-        const savedResults = result[STORAGE_KEY_RESULTS] || {};
+        const savedResults = result[STORAGE_KEY_RESULTS] as StoredResults || {};
         savedResults[url] = results;
 
         chrome.storage.local.set(
@@ -86,12 +104,12 @@ class StorageService {
 
   /**
    * Get all saved job analysis results
-   * @returns {Promise<Object>} All saved results
+   * @returns {Promise<StoredResults>} All saved results
    */
-  getAllResults() {
+  getAllResults(): Promise<StoredResults> {
     return new Promise((resolve) => {
       chrome.storage.local.get([STORAGE_KEY_RESULTS], (result) => {
-        resolve(result[STORAGE_KEY_RESULTS] || {});
+        resolve(result[STORAGE_KEY_RESULTS] as StoredResults || {});
       });
     });
   }
@@ -100,7 +118,7 @@ class StorageService {
    * Clear all saved job analysis results
    * @returns {Promise<void>}
    */
-  clearAllResults() {
+  clearAllResults(): Promise<void> {
     return new Promise((resolve) => {
       chrome.storage.local.remove(STORAGE_KEY_RESULTS, () => {
         resolve();
@@ -116,4 +134,4 @@ export const KEYS = {
 };
 
 // Export service
-export default new StorageService();
+export default new StorageService(); 

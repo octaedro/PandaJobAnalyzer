@@ -3,23 +3,56 @@
  * Handles rendering results to the UI
  */
 
+import { AnalysisResult } from '../storage/index';
+
+// Define ElementsCache interface
+interface ElementsCache {
+  // Sections
+  apiKeySection: HTMLElement;
+  settingsPanel: HTMLElement;
+  loadingSpinner: HTMLElement;
+  resultsSection: HTMLElement;
+
+  // Inputs and buttons
+  apiKeyInput: HTMLInputElement;
+  saveApiKeyBtn: HTMLButtonElement;
+  settingsIcon: HTMLElement;
+  tabButtons: NodeListOf<HTMLElement>;
+  tabContents: NodeListOf<HTMLElement>;
+  settingsApiKeyInput: HTMLInputElement;
+  updateApiKeyBtn: HTMLButtonElement;
+  deleteApiKeyBtn: HTMLButtonElement;
+  parseJobBtn: HTMLButtonElement;
+  retryBtn: HTMLButtonElement;
+
+  // Result elements
+  jobLocationEl: HTMLElement;
+  requiredSkillsEl: HTMLElement;
+  niceToHaveEl: HTMLElement;
+  companySummaryEl: HTMLElement;
+  companyReviewsEl: HTMLElement;
+  salaryRangeEl: HTMLElement;
+}
+
 /**
  * UI Renderer Service
  */
 class UIRendererService {
+  private elements: ElementsCache | null = null;
+
   /**
    * Initialize UI elements
-   * @param {Object} elements - DOM elements
+   * @param {ElementsCache} elements - DOM elements
    */
-  init(elements) {
+  init(elements: ElementsCache): void {
     this.elements = elements;
   }
 
   /**
    * Display job analysis results in the UI
-   * @param {Object} results - The analysis results
+   * @param {AnalysisResult} results - The analysis results
    */
-  displayResults(results) {
+  displayResults(results: AnalysisResult): void {
     if (!this.elements) {
       throw new Error("UI Renderer not initialized. Call init() first.");
     }
@@ -32,11 +65,11 @@ class UIRendererService {
     // Required Skills
     this.renderSkillsList(
       this.elements.requiredSkillsEl,
-      results.requiredSkills
+      results.requiredSkills || []
     );
 
     // Nice to Have Skills
-    this.renderSkillsList(this.elements.niceToHaveEl, results.niceToHaveSkills);
+    this.renderSkillsList(this.elements.niceToHaveEl, results.niceToHaveSkills || []);
 
     // Company Summary
     this.elements.companySummaryEl.textContent =
@@ -53,9 +86,9 @@ class UIRendererService {
   /**
    * Render skills list
    * @param {HTMLElement} element - The element to render to
-   * @param {Array} skills - The skills to render
+   * @param {string[]} skills - The skills to render
    */
-  renderSkillsList(element, skills) {
+  private renderSkillsList(element: HTMLElement, skills: string[]): void {
     element.innerHTML = "";
     if (Array.isArray(skills) && skills.length > 0) {
       skills.forEach((skill) => {
@@ -70,13 +103,17 @@ class UIRendererService {
 
   /**
    * Render salary range
-   * @param {Object} salaryRange - The salary range to render
+   * @param {object|null} salaryRange - The salary range to render
    */
-  renderSalaryRange(salaryRange) {
+  private renderSalaryRange(salaryRange: {min?: string, max?: string} | null | undefined): void {
+    if (!this.elements) {
+      throw new Error("UI Renderer not initialized. Call init() first.");
+    }
+    
     if (salaryRange && (salaryRange.min || salaryRange.max)) {
       let salaryText = "";
 
-      // Extraer valores de texto, manejar el caso cuando min o max son objetos
+      // Extract values from text, handle case when min or max are objects
       const minValue = this.extractSalaryValue(salaryRange.min);
       const maxValue = this.extractSalaryValue(salaryRange.max);
 
@@ -97,24 +134,24 @@ class UIRendererService {
   /**
    * Extract salary value as text, handling various formats
    * @param {any} value - The salary value which could be a string, number, or object
-   * @returns {string} The extracted value as a string
+   * @returns {string|null} The extracted value as a string
    */
-  extractSalaryValue(value) {
+  private extractSalaryValue(value: any): string | null {
     if (!value) return null;
 
-    // Si ya es un string o número, convertirlo a string
+    // If already a string or number, convert to string
     if (typeof value === "string" || typeof value === "number") {
       return String(value);
     }
 
-    // Si es un objeto, intentar extraer información útil
+    // If an object, try to extract useful information
     if (typeof value === "object") {
-      // Verificar propiedades comunes en objetos de salario
+      // Check common properties in salary objects
       if (value.amount) return String(value.amount);
       if (value.value) return String(value.value);
       if (value.salary) return String(value.salary);
 
-      // Intentar extraer la primera propiedad si existe
+      // Try to extract the first property if it exists
       const firstProp = Object.values(value)[0];
       if (
         firstProp &&
@@ -123,7 +160,7 @@ class UIRendererService {
         return String(firstProp);
       }
 
-      // Si todo falla, convertir a JSON para inspección
+      // If all else fails, convert to JSON for inspection
       try {
         return JSON.stringify(value);
       } catch (e) {
@@ -139,7 +176,11 @@ class UIRendererService {
    * @param {boolean} isLoading - Whether loading is in progress
    * @param {boolean} showResults - Whether to show results when done loading
    */
-  toggleLoadingState(isLoading, showResults = false) {
+  toggleLoadingState(isLoading: boolean, showResults = false): void {
+    if (!this.elements) {
+      throw new Error("UI Renderer not initialized. Call init() first.");
+    }
+    
     if (isLoading) {
       this.elements.loadingSpinner.classList.remove("hidden");
       this.elements.parseJobBtn.classList.add("hidden");
@@ -159,10 +200,10 @@ class UIRendererService {
    * Show error message
    * @param {string} message - The error message to show
    */
-  showError(message) {
+  showError(message: string): void {
     alert(message);
   }
 }
 
 // Export service
-export default new UIRendererService();
+export default new UIRendererService(); 

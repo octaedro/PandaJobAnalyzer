@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JobScope</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>JobScope</h1>
+      <div id="settingsIcon" class="settings-icon">⚙️</div>
+    </header>
+
+    <div id="settingsPanel" class="settings-panel hidden">
+      <div class="settings-content">
+        <div class="settings-tabs">
+          <button class="settings-tab-btn active" data-tab="api">API Key</button>
+          <button class="settings-tab-btn" data-tab="about">About</button>
+        </div>
+        
+        <div class="settings-tab-content active" id="apiTab">
+          <div class="api-key-section">
+            <label for="apiKey">OpenAI API Key:</label>
+            <div class="input-group">
+              <input type="password" id="apiKey" placeholder="Enter your OpenAI API key">
+              <button class="delete-btn" id="clearApiKey">
+                <span class="delete-icon">×</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-tab-content" id="aboutTab">
+          <h2>About JobScope</h2>
+          <p>JobScope is a Chrome extension that helps you analyze job postings using AI.</p>
+          <p>Features:</p>
+          <ul>
+            <li>Extract key information from job postings</li>
+            <li>Analyze company information</li>
+            <li>Get insights about job requirements</li>
+          </ul>
+          <p class="version">Version 1.0.0</p>
+        </div>
+      </div>
+    </div>
+
+    <section id="loadingSpinner" class="section hidden">
+      <div class="section-content loading-container">
+        <div class="spinner"></div>
+        <p>Analyzing job listing...</p>
+      </div>
+    </section>
+
+    <section id="results" class="section hidden">
+      <div class="section-content">
+        <div class="tabs">
+          <div class="tab-buttons">
+            <button class="tab-btn active" data-tab="job">Job Details</button>
+            <button class="tab-btn" data-tab="company">Company Info</button>
+          </div>
+          
+          <div class="tab-content active" id="jobTab">
+            <div id="jobContent"></div>
+          </div>
+          
+          <div class="tab-content" id="companyTab">
+            <div id="companyContent"></div>
+          </div>
+        </div>
+
+        <div class="retry-container">
+          <button id="retry" class="btn btn-outline">
+            Analyze Again
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="parseJob" class="section action-section">
+      <button class="btn btn-primary btn-large">
+        Parse this job!
+      </button>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html> 

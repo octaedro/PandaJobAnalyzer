@@ -115,7 +115,7 @@ input:focus {
 }
 
 button {
-  padding: 10px 16px;
+  padding: 10px;
   background-color: var(--primary-color);
   color: #ffffff;
   border: none;
@@ -156,13 +156,19 @@ button:active {
   border: 1px solid var(--border-color);
 }
 
-.tabs {
+.settings-content {
   display: flex;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--border-color);
+  flex-direction: column;
+  gap: 20px;
 }
 
-.tab-btn {
+.settings-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.settings-tab-btn {
   padding: 8px 16px;
   background-color: transparent;
   color: var(--text-color);
@@ -174,47 +180,29 @@ button:active {
   transition: all 0.2s;
 }
 
-.tab-btn:hover {
-  opacity: 0.9;
-  background-color: transparent;
-  transform: none;
-}
-
-.tab-btn.active {
+.settings-tab-btn.active {
   color: var(--primary-dark);
   border-bottom: 2px solid var(--primary-dark);
   opacity: 1;
 }
 
-.tab-content {
+.settings-tab-content {
+  display: none;
+}
+
+.settings-tab-content.active {
   display: block;
 }
 
-.tab-content h2 {
-  margin-bottom: 16px;
-  color: var(--primary-dark);
-  font-size: 17px;
-  font-weight: 500;
+/* Style lists inside settings tabs specifically if needed */
+#aboutTab ul {
+    padding-left: 25px; /* Indent list items */
+    margin-top: 8px; /* Space above list */
+    margin-bottom: 16px; /* Space below list */
 }
 
-.tab-content p, .tab-content ul {
-  margin-bottom: 16px;
-  font-size: 13px;
-}
-
-.tab-content ul {
-  padding-left: 20px;
-}
-
-.tab-content li {
-  margin-bottom: 4px;
-}
-
-.version {
-  font-size: 11px;
-  color: #8c97a7;
-  text-align: right;
-  margin-top: 16px;
+#aboutTab li {
+    margin-bottom: 6px; /* Space between list items */
 }
 
 /* Main Content */
@@ -224,8 +212,9 @@ button:active {
   padding: 14px;
   font-size: 15px;
   background-color: var(--primary-dark);
-  margin: 24px 0;
+  margin: 24px auto;
   border-radius: 8px;
+  text-align: center;
 }
 
 .secondary-btn {
@@ -302,23 +291,96 @@ button:active {
 }
 
 /* Styles for delete button */
-.delete-btn {
-  width: 36px;
-  padding: 8px;
-  background-color: #f44336;
-  color: white;
+.input-group .delete-btn {
   margin-left: 8px;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #ff4444;
 }
 
-.delete-btn:hover {
-  background-color: #d32f2f;
+.input-group .delete-btn:hover {
+  background-color: #ffdddd;
+  border-color: #ffaaaa;
 }
 
 .delete-icon {
-  width: 20px;
-  height: 20px;
-  fill: white;
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.tab-buttons {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  background-color: transparent;
+  color: var(--text-color);
+  border: none;
+  margin-right: 8px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  opacity: 0.7;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  opacity: 0.9;
+  background-color: transparent;
+  transform: none;
+}
+
+.tab-btn.active {
+  color: var(--primary-dark);
+  border-bottom: 2px solid var(--primary-dark);
+  opacity: 1;
+}
+
+.tab-content {
+  display: block;
+}
+
+.tab-content h2 {
+  margin-bottom: 16px;
+  color: var(--primary-dark);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.tab-content p, .tab-content ul {
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.tab-content ul {
+  padding-left: 20px;
+}
+
+.tab-content li {
+  margin-bottom: 4px;
+}
+
+.version {
+  font-size: 11px;
+  color: #8c97a7;
+  text-align: right;
+  margin-top: 16px;
 } 
