@@ -18,7 +18,7 @@ export interface AnalysisResult {
 		min?: string;
 		max?: string;
 	} | null;
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 export interface StoredResults {
