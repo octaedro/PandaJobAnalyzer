@@ -6,14 +6,22 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --config webpack.config.js",
-    "watch": "webpack --watch --config webpack.config.js"
+    "watch": "webpack --watch --config webpack.config.js",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --fix"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/chrome": "^0.0.317",
+    "@typescript-eslint/eslint-plugin": "^8.31.0",
+    "@typescript-eslint/parser": "^8.31.0",
+    "@wordpress/eslint-plugin": "^22.8.0",
     "copy-webpack-plugin": "^13.0.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-jsdoc": "^50.6.11",
+    "eslint-plugin-prettier": "^5.2.6",
+    "prettier": "^3.5.3",
     "ts-loader": "^9.5.2",
     "typescript": "^5.8.3",
     "webpack": "^5.99.7",
