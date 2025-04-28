@@ -1,17 +1,7 @@
 /**
- * API Key Manager Module
- * Handles getting, setting, and deleting the OpenAI API Key,
- * and coordinating related UI updates.
- */
-/**
  * Internal dependencies
  */
 import storageService from './storage/index'; // Assuming storageService path
-// import uiService from './ui'; // Will be needed later
-
-// TODO: Implement API key logic
-
-// Import UI functions and types
 import { updateApiKeyDisplay, showMessage, type DOMElementCache } from './ui';
 
 /**
@@ -89,4 +79,4 @@ export function handleApiKeyInput(elements: DOMElementCache): void {
 	}
 }
 
-export {}; // Temporary export
+export {};

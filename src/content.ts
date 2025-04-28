@@ -14,6 +14,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
 			// Common job listing selectors for various job sites
 			const jobSelectors = [
+				// Glassdoor (New, more specific)
+				'div[class*="JobDetails_jobDescription"]', // Using contains selector for robustness
 				// LinkedIn
 				'.jobs-description',
 				'.jobs-description-content',

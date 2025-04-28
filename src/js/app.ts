@@ -8,9 +8,6 @@
  */
 import openAIService from '../js/api/openai';
 import storageService from '../js/storage/index';
-// Remove unused AnalysisResult import
-// import type { AnalysisResult } from '../js/api/openai';
-// Import ONLY needed UI functions and types
 import {
 	cacheDOMElements,
 	type DOMElementCache,
@@ -21,8 +18,6 @@ import {
 	showMessage as showUIMessage, // Keep show message
 } from './ui';
 import * as apiKeyManager from './apiKeyManager';
-// Remove unused ui namespace import
-// import * as ui from './ui';
 import { initializeEventHandlers } from './eventHandler';
 
 /**
@@ -187,8 +182,9 @@ export class JobScopeApp {
 			await storageService.saveResults(this.currentUrl, results);
 			console.log('handleParseJob: Results saved.');
 
-			renderResults(results, this.elements); // Renders and shows results
-			toggleLoadingState(false, this.elements); // Hides loading, shows results/hides parse
+			renderResults(results, this.elements); // Renders and shows results section
+			toggleLoadingState(false, this.elements); // Hides loading spinner
+			hideElement(this.elements.parseJobSection); // Explicitly hide parse section after success
 		} catch (error: unknown) {
 			console.error('Error during parsing:', error);
 			const errorMessage =
@@ -198,7 +194,7 @@ export class JobScopeApp {
 				this.elements,
 				'error'
 			);
-			toggleLoadingState(false, this.elements); // Hides loading
+			toggleLoadingState(false, this.elements); // Hides loading spinner
 			showElement(this.elements.parseJobSection); // Ensure parse button is visible after error
 			hideElement(this.elements.resultsSection); // Hide results section on error
 		}

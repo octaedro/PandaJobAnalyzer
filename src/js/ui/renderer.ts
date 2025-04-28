@@ -37,6 +37,20 @@ interface ElementsCache {
 	salaryRangeEl: HTMLElement;
 }
 
+type SalaryValue =
+	| string
+	| number
+	| {
+			amount?: string | number;
+			value?: string | number;
+			salary?: string | number;
+	  };
+
+interface SalaryRange {
+	min?: string;
+	max?: string;
+}
+
 /**
  * UI Renderer Service
  */
@@ -111,16 +125,25 @@ class UIRendererService {
 
 	/**
 	 * Render salary range
-	 * @param {object|null} salaryRange - The salary range to render
+	 * @param {SalaryRange | null | undefined} salaryRange - The salary range object (or null/undefined).
 	 */
 	private renderSalaryRange(
 		salaryRange: { min?: string; max?: string } | null | undefined
 	): void {
-		if (!this.elements) {
-			throw new Error('UI Renderer not initialized. Call init() first.');
+		if (!this.elements || !this.elements.salaryRangeEl) {
+			console.error('UI Renderer or salary element not initialized.');
+			return;
 		}
 
-		if (salaryRange && (salaryRange.min || salaryRange.max)) {
+		// Handle null or undefined salaryRange input
+		if (!salaryRange) {
+			this.elements.salaryRangeEl.textContent =
+				'Not specified in the listing';
+			return;
+		}
+
+		// Now we know salaryRange is an object
+		if (salaryRange.min || salaryRange.max) {
 			let salaryText = '';
 
 			// Extract values from text, handle case when min or max are objects
@@ -147,7 +170,9 @@ class UIRendererService {
 	 * @param {any} value - The salary value which could be a string, number, or object
 	 * @returns {string|null} The extracted value as a string
 	 */
-	private extractSalaryValue(value: any): string | null {
+	private extractSalaryValue(
+		value: SalaryValue | undefined | null
+	): string | null {
 		if (!value) {
 			return null;
 		}
@@ -182,7 +207,7 @@ class UIRendererService {
 			// If all else fails, convert to JSON for inspection
 			try {
 				return JSON.stringify(value);
-			} catch (e) {
+			} catch {
 				return 'Unknown format';
 			}
 		}

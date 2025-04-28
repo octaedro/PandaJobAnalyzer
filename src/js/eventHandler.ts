@@ -1,8 +1,4 @@
 /**
- * Event Handler Module
- * Sets up all event listeners for the JobScope popup.
- */
-/**
  * Internal dependencies
  */
 import type { JobScopeApp } from './app'; // Use 'app' assuming JobScopeApp is exported there

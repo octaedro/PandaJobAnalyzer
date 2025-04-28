@@ -200,9 +200,17 @@ export function toggleLoadingState(
 	isLoading: boolean,
 	elements: DOMElementCache
 ): void {
+	// Always toggle the spinner based on isLoading
 	toggleElementVisibility(elements.loadingSpinner, isLoading);
-	toggleElementVisibility(elements.parseJobSection, !isLoading);
-	toggleElementVisibility(elements.resultsSection, !isLoading);
+
+	if (isLoading) {
+		// When loading starts, always hide Parse and Results sections
+		hideElement(elements.parseJobSection);
+		hideElement(elements.resultsSection);
+	}
+	// When loading stops (isLoading is false), ONLY hide the spinner.
+	// The decision to show Parse or Results sections is handled elsewhere
+	// (e.g., in checkSavedResults or handleParseJob success/error paths).
 }
 
 /**
