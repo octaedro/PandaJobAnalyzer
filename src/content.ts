@@ -29,6 +29,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 				'.jobDescriptionContent',
 				// ZipRecruiter
 				'.job_description',
+				// Greenhouse
+				'.job__description.body',
 				// Stack Overflow Jobs
 				'.job-details__content .s-prose', // More specific SO
 				'.job-details__content',
