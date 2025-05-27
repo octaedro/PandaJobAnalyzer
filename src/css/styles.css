@@ -354,8 +354,15 @@ button:active {
   opacity: 1;
 }
 
+/* Ensure main tab content panels are hidden by default */
 .tab-content {
-  display: block;
+  display: none; /* Hide inactive tab content */
+  padding-top: 16px; /* Add some space above content within a tab */
+}
+
+/* Show only the active tab content panel */
+.tab-content.active {
+  display: block; /* Show active tab content */
 }
 
 .tab-content h2 {

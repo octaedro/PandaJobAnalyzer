@@ -19,8 +19,12 @@ export interface DOMElementCache {
 	settingsTabContents: NodeListOf<HTMLElement>;
 	tabButtons: NodeListOf<HTMLElement>;
 	tabContents: NodeListOf<HTMLElement>;
-	jobContentEl: HTMLElement | null;
-	companyContentEl: HTMLElement | null;
+	jobLocationEl: HTMLElement | null;
+	requiredSkillsEl: HTMLElement | null;
+	niceToHaveEl: HTMLElement | null;
+	salaryRangeEl: HTMLElement | null;
+	companySummaryEl: HTMLElement | null;
+	companyReviewsEl: HTMLElement | null;
 	messageArea: HTMLElement | null;
 }
 
@@ -50,8 +54,12 @@ export function cacheDOMElements(): DOMElementCache {
 		settingsTabContents: document.querySelectorAll('.settings-tab-content'),
 		tabButtons: document.querySelectorAll('.tab-btn'),
 		tabContents: document.querySelectorAll('.tab-content'),
-		jobContentEl: document.getElementById('jobContent'),
-		companyContentEl: document.getElementById('companyContent'),
+		jobLocationEl: document.getElementById('jobLocation'),
+		requiredSkillsEl: document.getElementById('requiredSkills'),
+		niceToHaveEl: document.getElementById('niceToHave'),
+		salaryRangeEl: document.getElementById('salaryRange'),
+		companySummaryEl: document.getElementById('companySummary'),
+		companyReviewsEl: document.getElementById('companyReviews'),
 		messageArea: document.getElementById('messageArea'),
 	};
 }
@@ -106,87 +114,172 @@ export function renderResults(
 	resultsData: unknown,
 	elements: DOMElementCache
 ): void {
-	console.log('Rendering results:', resultsData);
+	console.log('UI: renderResults called. Data:', resultsData);
+	console.log('UI: Cached elements:', elements);
+	console.log('UI: elements.jobLocationEl:', elements.jobLocationEl);
+	console.log('UI: elements.requiredSkillsEl:', elements.requiredSkillsEl);
+	console.log('UI: elements.niceToHaveEl:', elements.niceToHaveEl);
+	console.log('UI: elements.salaryRangeEl:', elements.salaryRangeEl);
+	console.log('UI: elements.companySummaryEl:', elements.companySummaryEl);
+	console.log('UI: elements.companyReviewsEl:', elements.companyReviewsEl);
 
 	if (typeof resultsData !== 'object' || resultsData === null) {
 		console.error('renderResults called with invalid data');
-		if (elements.jobContentEl) {
-			elements.jobContentEl.innerHTML =
-				'<p>Error: No valid results data found.</p>';
+		if (elements.jobLocationEl) {
+			elements.jobLocationEl.textContent =
+				'Error: No valid results data found.';
 		}
-		if (elements.companyContentEl) {
-			elements.companyContentEl.innerHTML = '';
+		if (elements.requiredSkillsEl) {
+			elements.requiredSkillsEl.innerHTML =
+				'<li>Error: No valid results data found.</li>';
+		}
+		if (elements.niceToHaveEl) {
+			elements.niceToHaveEl.innerHTML =
+				'<li>Error: No valid results data found.</li>';
+		}
+		if (elements.salaryRangeEl) {
+			elements.salaryRangeEl.textContent =
+				'Error: No valid results data found.';
+		}
+		if (elements.companySummaryEl) {
+			elements.companySummaryEl.textContent =
+				'Error: No valid results data found.';
+		}
+		if (elements.companyReviewsEl) {
+			elements.companyReviewsEl.textContent =
+				'Error: No valid results data found.';
 		}
 		return;
 	}
 
 	const results = resultsData as AnalysisResult;
 
-	if (elements.jobContentEl) {
-		elements.jobContentEl.innerHTML = '';
+	// Clear previous content - important if re-rendering
+	if (elements.jobLocationEl) {
+		elements.jobLocationEl.textContent = 'Loading...';
 	}
-	if (elements.companyContentEl) {
-		elements.companyContentEl.innerHTML = '';
+	if (elements.requiredSkillsEl) {
+		elements.requiredSkillsEl.innerHTML = '<li>Loading...</li>';
+	}
+	if (elements.niceToHaveEl) {
+		elements.niceToHaveEl.innerHTML = '<li>Loading...</li>';
+	}
+	if (elements.salaryRangeEl) {
+		elements.salaryRangeEl.textContent = 'Loading...';
+	}
+	if (elements.companySummaryEl) {
+		elements.companySummaryEl.textContent = 'Loading...';
+	}
+	if (elements.companyReviewsEl) {
+		elements.companyReviewsEl.textContent = 'Loading...';
 	}
 
-	let jobHtml = '';
-	let companyHtml = '';
-	let foundStructuredJobData = false;
-	let foundStructuredCompanyData = false;
-
-	// --- Populate Job Details ---
-	if (results.jobLocation) {
-		jobHtml += `<h4>Location:</h4><p>${Array.isArray(results.jobLocation) ? results.jobLocation.join(', ') : results.jobLocation}</p>`;
-		foundStructuredJobData = true;
+	// --- Populate Job Details --- (Directly update elements)
+	if (results.jobLocation && elements.jobLocationEl) {
+		elements.jobLocationEl.textContent = Array.isArray(results.jobLocation)
+			? results.jobLocation.join(', ')
+			: results.jobLocation;
+	} else if (elements.jobLocationEl) {
+		elements.jobLocationEl.textContent = 'Not specified';
 	}
+
 	if (
 		results.salaryRange &&
-		(results.salaryRange.min || results.salaryRange.max)
+		(results.salaryRange.min || results.salaryRange.max) &&
+		elements.salaryRangeEl
 	) {
-		jobHtml += `<h4>Salary Range:</h4><p>${results.salaryRange.min || 'N/A'} - ${results.salaryRange.max || 'N/A'}</p>`;
-		foundStructuredJobData = true;
+		elements.salaryRangeEl.textContent = `${results.salaryRange.min || 'N/A'} - ${results.salaryRange.max || 'N/A'}`;
+	} else if (elements.salaryRangeEl) {
+		elements.salaryRangeEl.textContent = 'Not specified in ad';
 	}
+
 	if (
 		results.requiredSkills &&
 		Array.isArray(results.requiredSkills) &&
-		results.requiredSkills.length > 0
+		results.requiredSkills.length > 0 &&
+		elements.requiredSkillsEl
 	) {
-		jobHtml += `<h4>Required Skills:</h4><ul>${results.requiredSkills.map((skill: string) => `<li>${skill}</li>`).join('')}</ul>`;
-		foundStructuredJobData = true;
+		elements.requiredSkillsEl.innerHTML = results.requiredSkills
+			.map((skill: string) => `<li>${skill}</li>`)
+			.join('');
+	} else if (elements.requiredSkillsEl) {
+		elements.requiredSkillsEl.innerHTML = '<li>Not specified</li>';
 	}
+
 	if (
 		results.niceToHaveSkills &&
 		Array.isArray(results.niceToHaveSkills) &&
-		results.niceToHaveSkills.length > 0
+		results.niceToHaveSkills.length > 0 &&
+		elements.niceToHaveEl
 	) {
-		jobHtml += `<h4>Nice-to-Have Skills:</h4><ul>${results.niceToHaveSkills.map((skill: string) => `<li>${skill}</li>`).join('')}</ul>`;
-		foundStructuredJobData = true;
+		elements.niceToHaveEl.innerHTML = results.niceToHaveSkills
+			.map((skill: string) => `<li>${skill}</li>`)
+			.join('');
+	} else if (elements.niceToHaveEl) {
+		elements.niceToHaveEl.innerHTML = '<li>Not specified</li>';
 	}
 
-	// --- Populate Company Details ---
-	if (results.companySummary) {
-		companyHtml += `<h4>Summary:</h4><p>${results.companySummary}</p>`;
-		foundStructuredCompanyData = true;
-	}
-	if (results.companyReviews) {
-		companyHtml += `<h4>Reviews Summary:</h4><p>${results.companyReviews}</p>`;
-		foundStructuredCompanyData = true;
+	// --- Populate Company Details --- (Directly update elements)
+	console.log(
+		'UI: Populating Company Details. Summary data:',
+		results.companySummary,
+		'Reviews data:',
+		results.companyReviews
+	);
+	console.log('UI: elements.companySummaryEl:', elements.companySummaryEl);
+	console.log('UI: elements.companyReviewsEl:', elements.companyReviewsEl);
+
+	if (results.companySummary && elements.companySummaryEl) {
+		elements.companySummaryEl.textContent = results.companySummary;
+		console.log(
+			'UI: Set companySummaryEl text to:',
+			results.companySummary
+		);
+	} else if (elements.companySummaryEl) {
+		elements.companySummaryEl.textContent = 'No summary available';
+		console.log(
+			'UI: Set companySummaryEl text to: No summary available. Reason: results.companySummary was falsy (',
+			results.companySummary,
+			') or element missing.'
+		);
 	}
 
-	// --- Render HTML ---
-	if (elements.jobContentEl) {
-		elements.jobContentEl.innerHTML = jobHtml;
-	}
-	if (elements.companyContentEl) {
-		elements.companyContentEl.innerHTML = companyHtml;
+	if (results.companyReviews && elements.companyReviewsEl) {
+		elements.companyReviewsEl.textContent = results.companyReviews;
+		console.log(
+			'UI: Set companyReviewsEl text to:',
+			results.companyReviews
+		);
+	} else if (elements.companyReviewsEl) {
+		elements.companyReviewsEl.textContent = 'No reviews available';
+		console.log(
+			'UI: Set companyReviewsEl text to: No reviews available. Reason: results.companyReviews was falsy (',
+			results.companyReviews,
+			') or element missing.'
+		);
 	}
 
-	// --- Fallback ---
-	if (!foundStructuredJobData && elements.jobContentEl) {
-		elements.jobContentEl.innerHTML = `<p>Could not extract structured job details. Raw analysis:</p><pre>${JSON.stringify(results, null, 2)}</pre>`;
-	} else if (!foundStructuredCompanyData && elements.companyContentEl) {
-		elements.companyContentEl.innerHTML = `<p>No specific company details extracted.</p>`;
-	}
+	// Ensure correct tab visibility after rendering results
+	// This assumes 'jobTab' is the default active tab.
+	elements.tabContents.forEach((contentPane) => {
+		if (contentPane.id === 'jobTab') {
+			contentPane.classList.add('active');
+			contentPane.classList.remove('hidden');
+			(contentPane as HTMLElement).style.display = 'block'; // Explicitly show
+		} else {
+			contentPane.classList.remove('active');
+			contentPane.classList.add('hidden');
+			(contentPane as HTMLElement).style.display = 'none'; // Explicitly hide
+		}
+	});
+	// Activate the corresponding button as well
+	elements.tabButtons.forEach((btn) => {
+		if (btn.getAttribute('data-tab') === 'job') {
+			btn.classList.add('active');
+		} else {
+			btn.classList.remove('active');
+		}
+	});
 
 	showElement(elements.resultsSection);
 }
@@ -230,18 +323,19 @@ export function handleTabClick(
 		return;
 	}
 
-	const targetContentId = tabData + 'Tab';
+	const targetContentId = `${tabData}Tab`; // Using template literal, same result
 
 	tabButtons.forEach((btn) => btn.classList.remove('active'));
 	targetButton.classList.add('active');
 
 	tabContents.forEach((content) => {
-		if (content.id === targetContentId) {
-			content.classList.add('active');
-			content.classList.remove('hidden'); // Ensure active tab is visible
+		const contentPane = content as HTMLElement; // Cast for style access
+		if (contentPane.id === targetContentId) {
+			contentPane.classList.add('active');
+			contentPane.style.display = 'block'; // More direct
 		} else {
-			content.classList.remove('active');
-			content.classList.add('hidden'); // Hide inactive tabs
+			contentPane.classList.remove('active');
+			contentPane.style.display = 'none'; // More direct
 		}
 	});
 }
