@@ -54,6 +54,6 @@ To get an API key:
 ## License
 
 This project is licensed under the MIT License.  
-Copyright (c) 2025 [Tu Nombre].
+Copyright (c) 2025 Fernando Marichal.
 
 See the [LICENSE](LICENSE) file for more details.
