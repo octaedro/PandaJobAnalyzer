@@ -114,15 +114,6 @@ export function renderResults(
 	resultsData: unknown,
 	elements: DOMElementCache
 ): void {
-	console.log('UI: renderResults called. Data:', resultsData);
-	console.log('UI: Cached elements:', elements);
-	console.log('UI: elements.jobLocationEl:', elements.jobLocationEl);
-	console.log('UI: elements.requiredSkillsEl:', elements.requiredSkillsEl);
-	console.log('UI: elements.niceToHaveEl:', elements.niceToHaveEl);
-	console.log('UI: elements.salaryRangeEl:', elements.salaryRangeEl);
-	console.log('UI: elements.companySummaryEl:', elements.companySummaryEl);
-	console.log('UI: elements.companyReviewsEl:', elements.companyReviewsEl);
-
 	if (typeof resultsData !== 'object' || resultsData === null) {
 		console.error('renderResults called with invalid data');
 		if (elements.jobLocationEl) {
@@ -220,43 +211,16 @@ export function renderResults(
 	}
 
 	// --- Populate Company Details --- (Directly update elements)
-	console.log(
-		'UI: Populating Company Details. Summary data:',
-		results.companySummary,
-		'Reviews data:',
-		results.companyReviews
-	);
-	console.log('UI: elements.companySummaryEl:', elements.companySummaryEl);
-	console.log('UI: elements.companyReviewsEl:', elements.companyReviewsEl);
-
 	if (results.companySummary && elements.companySummaryEl) {
 		elements.companySummaryEl.textContent = results.companySummary;
-		console.log(
-			'UI: Set companySummaryEl text to:',
-			results.companySummary
-		);
 	} else if (elements.companySummaryEl) {
 		elements.companySummaryEl.textContent = 'No summary available';
-		console.log(
-			'UI: Set companySummaryEl text to: No summary available. Reason: results.companySummary was falsy (',
-			results.companySummary,
-			') or element missing.'
-		);
 	}
 
 	if (results.companyReviews && elements.companyReviewsEl) {
 		elements.companyReviewsEl.textContent = results.companyReviews;
-		console.log(
-			'UI: Set companyReviewsEl text to:',
-			results.companyReviews
-		);
 	} else if (elements.companyReviewsEl) {
 		elements.companyReviewsEl.textContent = 'No reviews available';
-		console.log(
-			'UI: Set companyReviewsEl text to: No reviews available. Reason: results.companyReviews was falsy (',
-			results.companyReviews,
-			') or element missing.'
-		);
 	}
 
 	// Ensure correct tab visibility after rendering results
@@ -323,19 +287,23 @@ export function handleTabClick(
 		return;
 	}
 
-	const targetContentId = `${tabData}Tab`; // Using template literal, same result
+	const targetContentId = `${tabData}Tab`;
 
-	tabButtons.forEach((btn) => btn.classList.remove('active'));
+	tabButtons.forEach((btn) => {
+		btn.classList.remove('active');
+	});
 	targetButton.classList.add('active');
 
 	tabContents.forEach((content) => {
-		const contentPane = content as HTMLElement; // Cast for style access
+		const contentPane = content as HTMLElement;
 		if (contentPane.id === targetContentId) {
 			contentPane.classList.add('active');
-			contentPane.style.display = 'block'; // More direct
+			contentPane.classList.remove('hidden');
+			contentPane.style.display = 'block';
 		} else {
 			contentPane.classList.remove('active');
-			contentPane.style.display = 'none'; // More direct
+			contentPane.classList.add('hidden');
+			contentPane.style.display = 'none';
 		}
 	});
 }
@@ -347,7 +315,7 @@ export function handleTabClick(
  * @param {'info' | 'error'} [type='info'] - The type of message ('info' or 'error').
  * @param {number} [timeout=3000] - Duration in ms to show the message (0 for permanent).
  */
-let messageTimeoutId: number | null = null; // Store timeout ID
+let messageTimeoutId: number | null = null; // Store timeout ID to clear if a new message comes quickly
 
 /**
  * Shows a message to the user in the dedicated message area.
@@ -363,26 +331,30 @@ export function showMessage(
 	timeout: number = 3000
 ): void {
 	if (!elements.messageArea) {
+		// Fallback if message area not found, but still log to console
 		console[type === 'error' ? 'error' : 'log'](
-			'Message (fallback alert): ',
+			'Message (no UI area):',
 			message
 		);
-		alert(message); // Fallback if message area not found
+		// Avoid alert if it's just an info message and no UI area is present
+		if (type === 'error') {
+			alert(message);
+		}
 		return;
 	}
 
 	const msgArea = elements.messageArea;
 	msgArea.textContent = message;
-	msgArea.className = `message-area ${type}`; // Set class for styling
-	showElement(msgArea); // Make it visible
+	msgArea.className = `message-area ${type}`;
+	showElement(msgArea);
 
-	// Clear previous timeout if exists
+	// Clear previous timeout if exists, so new messages don't get cut short
 	if (messageTimeoutId) {
 		clearTimeout(messageTimeoutId);
 		messageTimeoutId = null;
 	}
 
-	// Set timeout to hide the message
+	// Set timeout to hide the message, unless timeout is 0 (permanent)
 	if (timeout > 0) {
 		messageTimeoutId = window.setTimeout(() => {
 			hideElement(msgArea);
@@ -405,12 +377,13 @@ export function updateApiKeyDisplay(
 	}
 	if (elements.saveUpdateApiKeyBtn) {
 		elements.saveUpdateApiKeyBtn.textContent = apiKey ? 'Update' : 'Save';
-		// Disable button initially after load/update/clear, enable on input
+		// Disable button initially after load/update/clear; re-enabled on input by eventHandler
 		elements.saveUpdateApiKeyBtn.disabled = true;
 	}
 	if (elements.clearApiKeyBtn) {
-		toggleElementVisibility(elements.clearApiKeyBtn, !!apiKey); // Show only if key exists
+		// Show the clear button only if an API key exists
+		toggleElementVisibility(elements.clearApiKeyBtn, !!apiKey);
 	}
 }
 
-export {}; // Temporary export
+export {};
