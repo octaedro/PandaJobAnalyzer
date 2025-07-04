@@ -1,5 +1,5 @@
 /**
- * JobScope - Main Application
+ * Panda Job Analyzer - Main Application
  * Chrome extension for analyzing job listings using OpenAI
  */
 
@@ -23,7 +23,7 @@ import { initializeEventHandlers } from './eventHandler';
 /**
  * Main application class
  */
-export class JobScopeApp {
+export class PandaJobAnalyzerApp {
 	public currentUrl: string = '';
 	public elements: DOMElementCache;
 
@@ -325,6 +325,6 @@ export class JobScopeApp {
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
-	const app = new JobScopeApp();
+	const app = new PandaJobAnalyzerApp();
 	app.initialize(); // Start the initialization logic
 });

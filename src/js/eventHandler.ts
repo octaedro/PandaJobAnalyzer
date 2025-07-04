@@ -1,18 +1,18 @@
 /**
  * Internal dependencies
  */
-import type { JobScopeApp } from './app'; // Use 'app' assuming JobScopeApp is exported there
+import type { PandaJobAnalyzerApp } from './app'; // Use 'app' assuming PandaJobAnalyzerApp is exported there
 import type { DOMElementCache } from './ui';
 import * as ui from './ui';
 import * as apiKeyManager from './apiKeyManager';
 
 /**
  * Initializes all event listeners for the application.
- * @param {JobScopeApp} app The main application instance.
+ * @param {PandaJobAnalyzerApp} app The main application instance.
  * @param {DOMElementCache} elements The cached DOM elements.
  */
 export function initializeEventHandlers(
-	app: JobScopeApp,
+	app: PandaJobAnalyzerApp,
 	elements: DOMElementCache
 ): void {
 	// Settings Icon

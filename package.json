@@ -1,5 +1,5 @@
 {
-  "name": "jobscope",
+  "name": "pandajobanalyzer",
   "version": "1.0.0",
   "description": "A Chrome extension that analyzes job listings using OpenAI to extract key information:",
   "main": "content.js",

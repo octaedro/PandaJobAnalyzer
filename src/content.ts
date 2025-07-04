@@ -1,4 +1,4 @@
-console.log('--- JobScope Content Script Loaded ---');
+console.log('--- Panda Job Analyzer Content Script Loaded ---');
 
 // This script runs in the context of the webpage
 // It helps extract job posting content from the page

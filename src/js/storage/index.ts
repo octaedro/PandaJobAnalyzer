@@ -5,7 +5,7 @@
 
 // Storage keys
 const STORAGE_KEY_API = 'openaiApiKey';
-const STORAGE_KEY_RESULTS = 'jobScopeResults';
+const STORAGE_KEY_RESULTS = 'pandaJobAnalyzerResults';
 
 // Define result types
 export interface AnalysisResult {

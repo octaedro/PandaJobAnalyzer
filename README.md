@@ -1,4 +1,4 @@
-# JobScope
+# Panda Job Analyzer
 
 A Chrome extension that analyzes job listings using OpenAI to extract key information:
 
@@ -15,25 +15,15 @@ A Chrome extension that analyzes job listings using OpenAI to extract key inform
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" using the toggle in the top-right corner
 4. Click "Load unpacked" and select the extension directory
-5. The JobScope icon (green magnifying glass) will appear in your browser toolbar
+5. The Panda Job Analyzer icon (green magnifying glass) will appear in your browser toolbar
 
 ## Usage
 
 1. Navigate to any job listing webpage
-2. Click on the JobScope icon in your browser toolbar
+2. Click on the Panda Job Analyzer icon in your browser toolbar
 3. Enter your OpenAI API key (if first time using)
 4. Click "Parse this job!" button
 5. View the analyzed job information
-
-## Creating the Extension Icons
-
-To complete the extension, you need to create three icon files in the `icons` directory:
-
-- `icon16.png` (16x16 pixels)
-- `icon48.png` (48x48 pixels)
-- `icon128.png` (128x128 pixels)
-
-These should be green magnifying glass icons as specified. You can create these using any image editing software or use online icon generators.
 
 ## OpenAI API Key
 
