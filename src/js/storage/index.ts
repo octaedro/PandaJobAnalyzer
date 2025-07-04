@@ -6,6 +6,7 @@
 // Storage keys
 const STORAGE_KEY_API = 'openaiApiKey';
 const STORAGE_KEY_RESULTS = 'pandaJobAnalyzerResults';
+const STORAGE_KEY_RESUME = 'pandaJobAnalyzerResume';
 
 // Define result types
 export interface AnalysisResult {
@@ -23,6 +24,51 @@ export interface AnalysisResult {
 
 export interface StoredResults {
 	[url: string]: AnalysisResult;
+}
+
+export interface ResumeData {
+	personalInfo: {
+		name: string;
+		email?: string;
+		phone?: string;
+		location?: string;
+		linkedin?: string;
+		github?: string;
+		website?: string;
+	};
+	summary?: string;
+	experience: Array<{
+		company: string;
+		position: string;
+		duration: string;
+		description?: string;
+		achievements?: string[];
+	}>;
+	education: Array<{
+		institution: string;
+		degree: string;
+		fieldOfStudy?: string;
+		graduationYear?: string;
+		gpa?: string;
+	}>;
+	skills: {
+		technical: string[];
+		soft: string[];
+		languages?: string[];
+	};
+	projects?: Array<{
+		name: string;
+		description: string;
+		technologies?: string[];
+		url?: string;
+	}>;
+	certifications?: Array<{
+		name: string;
+		issuer: string;
+		date?: string;
+	}>;
+	uploadedAt: string;
+	fileName: string;
 }
 
 /**
@@ -127,12 +173,53 @@ class StorageService {
 			});
 		});
 	}
+
+	/**
+	 * Get the resume data from storage
+	 * @returns {Promise<ResumeData|null>} The resume data or null if not found
+	 */
+	getResumeData(): Promise<ResumeData | null> {
+		return new Promise((resolve) => {
+			chrome.storage.local.get([STORAGE_KEY_RESUME], (result) => {
+				resolve(result[STORAGE_KEY_RESUME] || null);
+			});
+		});
+	}
+
+	/**
+	 * Save the resume data to storage
+	 * @param {ResumeData} resumeData - The resume data to save
+	 * @returns {Promise<void>}
+	 */
+	saveResumeData(resumeData: ResumeData): Promise<void> {
+		return new Promise((resolve) => {
+			chrome.storage.local.set(
+				{ [STORAGE_KEY_RESUME]: resumeData },
+				() => {
+					resolve();
+				}
+			);
+		});
+	}
+
+	/**
+	 * Delete the resume data from storage
+	 * @returns {Promise<void>}
+	 */
+	deleteResumeData(): Promise<void> {
+		return new Promise((resolve) => {
+			chrome.storage.local.remove(STORAGE_KEY_RESUME, () => {
+				resolve();
+			});
+		});
+	}
 }
 
 // Export constants
 export const KEYS = {
 	API: STORAGE_KEY_API,
 	RESULTS: STORAGE_KEY_RESULTS,
+	RESUME: STORAGE_KEY_RESUME,
 };
 
 // Export service

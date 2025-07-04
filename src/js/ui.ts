@@ -26,6 +26,16 @@ export interface DOMElementCache {
 	companySummaryEl: HTMLElement | null;
 	companyReviewsEl: HTMLElement | null;
 	messageArea: HTMLElement | null;
+	// Resume elements
+	resumeFile: HTMLInputElement | null;
+	fileUploadZone: HTMLElement | null;
+	fileSelectedInfo: HTMLElement | null;
+	fileName: HTMLElement | null;
+	fileSize: HTMLElement | null;
+	removeFile: HTMLButtonElement | null;
+	uploadResumeBtn: HTMLButtonElement | null;
+	resumeUploaded: HTMLElement | null;
+	deleteResumeBtn: HTMLButtonElement | null;
 }
 
 /**
@@ -61,6 +71,20 @@ export function cacheDOMElements(): DOMElementCache {
 		companySummaryEl: document.getElementById('companySummary'),
 		companyReviewsEl: document.getElementById('companyReviews'),
 		messageArea: document.getElementById('messageArea'),
+		// Resume elements
+		resumeFile: document.getElementById('resumeFile') as HTMLInputElement,
+		fileUploadZone: document.getElementById('fileUploadZone'),
+		fileSelectedInfo: document.getElementById('fileSelectedInfo'),
+		fileName: document.getElementById('fileName'),
+		fileSize: document.getElementById('fileSize'),
+		removeFile: document.getElementById('removeFile') as HTMLButtonElement,
+		uploadResumeBtn: document.getElementById(
+			'uploadResumeBtn'
+		) as HTMLButtonElement,
+		resumeUploaded: document.getElementById('resumeUploaded'),
+		deleteResumeBtn: document.getElementById(
+			'deleteResumeBtn'
+		) as HTMLButtonElement,
 	};
 }
 

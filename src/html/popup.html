@@ -18,6 +18,7 @@
       <div class="settings-content">
         <div class="settings-tabs">
           <button class="settings-tab-btn active" data-tab="api">API Key</button>
+          <button class="settings-tab-btn" data-tab="resume">Resume</button>
           <button class="settings-tab-btn" data-tab="about">About</button>
         </div>
         
@@ -31,6 +32,41 @@
               </button>
             </div>
             <button id="saveUpdateApiKeyBtn" class="btn btn-secondary btn-small">Save</button>
+          </div>
+        </div>
+
+        <div class="settings-tab-content" id="resumeTab">
+          <div class="resume-section">
+            <label for="resumeFile">Upload Resume (PDF):</label>
+            <div class="file-upload-container">
+              <input type="file" id="resumeFile" accept=".pdf" class="file-input">
+              <div class="file-upload-display">
+                <div class="file-upload-zone" id="fileUploadZone">
+                  <div class="file-upload-icon">📄</div>
+                  <p>Click to select or drag & drop your resume (PDF)</p>
+                  <p class="file-size-limit">Max size: 10MB</p>
+                </div>
+                <div class="file-selected-info hidden" id="fileSelectedInfo">
+                  <div class="file-info">
+                    <span class="file-name" id="fileName"></span>
+                    <span class="file-size" id="fileSize"></span>
+                  </div>
+                  <button class="delete-btn" id="removeFile" title="Remove file">
+                    <span class="delete-icon">×</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button id="uploadResumeBtn" class="btn btn-secondary btn-small" disabled>Upload & Process</button>
+            <div class="resume-status" id="resumeStatus">
+              <div class="resume-uploaded hidden" id="resumeUploaded">
+                <div class="status-icon">✅</div>
+                <span>Resume processed successfully</span>
+                <button class="delete-btn" id="deleteResumeBtn" title="Delete resume data">
+                  <span class="delete-icon">×</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

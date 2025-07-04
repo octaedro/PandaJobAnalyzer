@@ -18,6 +18,7 @@ import {
 	showMessage as showUIMessage, // Keep show message
 } from './ui';
 import * as apiKeyManager from './apiKeyManager';
+import * as resumeManager from './resumeManager';
 import { initializeEventHandlers } from './eventHandler';
 
 /**
@@ -37,6 +38,9 @@ export class PandaJobAnalyzerApp {
 			const hasApiKey = await apiKeyManager.initializeApiKeyStatus(
 				this.elements
 			);
+
+			// Initialize resume status regardless of API key
+			await resumeManager.initializeResumeStatus(this.elements);
 
 			if (hasApiKey) {
 				try {

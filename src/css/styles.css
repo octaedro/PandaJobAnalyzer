@@ -432,4 +432,170 @@ button:active {
 .btn-small {
      padding: 8px 12px;
      font-size: 12px;
+}
+
+/* Resume Upload Styles */
+.resume-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.file-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-upload-display {
+  position: relative;
+}
+
+.file-upload-zone {
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: var(--background-color);
+}
+
+.file-upload-zone:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(74, 144, 226, 0.05);
+}
+
+.file-upload-zone.drag-over {
+  border-color: var(--primary-color);
+  background-color: rgba(74, 144, 226, 0.1);
+}
+
+.file-upload-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.file-upload-zone p {
+  margin: 4px 0;
+  color: var(--text-color);
+  font-size: 13px;
+}
+
+.file-size-limit {
+  font-size: 11px;
+  color: #8c97a7;
+}
+
+.file-selected-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.file-name {
+  font-size: 13px;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.file-size {
+  font-size: 11px;
+  color: #8c97a7;
+}
+
+.file-selected-info .delete-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #ff4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-selected-info .delete-btn:hover {
+  background-color: #ffdddd;
+  border-color: #ffaaaa;
+}
+
+.file-selected-info .delete-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.resume-status {
+  margin-top: 12px;
+}
+
+.resume-uploaded {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: rgba(147, 197, 232, 0.1);
+  border: 1px solid rgba(147, 197, 232, 0.3);
+  border-radius: 6px;
+  color: var(--text-color);
+  font-size: 13px;
+}
+
+.status-icon {
+  font-size: 16px;
+}
+
+.resume-uploaded .delete-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #ff4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+
+.resume-uploaded .delete-btn:hover {
+  background-color: #ffdddd;
+  border-color: #ffaaaa;
+}
+
+.resume-uploaded .delete-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+#uploadResumeBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #9ca3af;
+}
+
+#uploadResumeBtn:disabled:hover {
+  background-color: #9ca3af;
+  transform: none;
 } 

@@ -5,6 +5,7 @@ import type { PandaJobAnalyzerApp } from './app'; // Use 'app' assuming PandaJob
 import type { DOMElementCache } from './ui';
 import * as ui from './ui';
 import * as apiKeyManager from './apiKeyManager';
+import * as resumeManager from './resumeManager';
 
 /**
  * Initializes all event listeners for the application.
@@ -107,5 +108,70 @@ export function initializeEventHandlers(
 		elements.retryBtn.addEventListener('click', () =>
 			app.handleParseJob(true)
 		);
+	}
+
+	// Resume file input
+	if (elements.resumeFile) {
+		elements.resumeFile.addEventListener('change', (event) => {
+			const target = event.target as HTMLInputElement;
+			const file = target.files?.[0];
+			if (file) {
+				resumeManager.handleFileSelection(file, elements);
+			}
+		});
+	}
+
+	// File upload zone click
+	if (elements.fileUploadZone && elements.resumeFile) {
+		elements.fileUploadZone.addEventListener('click', () => {
+			elements.resumeFile?.click();
+		});
+
+		// Drag and drop functionality
+		elements.fileUploadZone.addEventListener('dragover', (event) => {
+			event.preventDefault();
+			elements.fileUploadZone?.classList.add('drag-over');
+		});
+
+		elements.fileUploadZone.addEventListener('dragleave', () => {
+			elements.fileUploadZone?.classList.remove('drag-over');
+		});
+
+		elements.fileUploadZone.addEventListener('drop', (event) => {
+			event.preventDefault();
+			elements.fileUploadZone?.classList.remove('drag-over');
+
+			const files = event.dataTransfer?.files;
+			const file = files?.[0];
+			if (file) {
+				resumeManager.handleFileSelection(file, elements);
+			}
+		});
+	}
+
+	// Remove file button
+	if (elements.removeFile) {
+		elements.removeFile.addEventListener('click', () => {
+			resumeManager.handleRemoveFile(elements);
+		});
+	}
+
+	// Upload resume button
+	if (elements.uploadResumeBtn && elements.resumeFile) {
+		elements.uploadResumeBtn.addEventListener('click', async () => {
+			const file = elements.resumeFile?.files?.[0];
+			if (file) {
+				await resumeManager.handleResumeUpload(file, elements);
+			}
+		});
+	}
+
+	// Delete resume button
+	if (elements.deleteResumeBtn) {
+		elements.deleteResumeBtn.addEventListener('click', async () => {
+			if (confirm('Are you sure you want to delete your resume data?')) {
+				await resumeManager.handleResumeDelete(elements);
+			}
+		});
 	}
 }
