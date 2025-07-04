@@ -134,43 +134,6 @@ export class PDFProcessor {
 	}
 
 	/**
-	 * Creates an intelligent prompt for OpenAI based on the uploaded file
-	 * @param file
-	 */
-	private static async createIntelligentResumePrompt(
-		file: File
-	): Promise<PDFProcessingResult> {
-		const intelligentPrompt = `Create a realistic professional resume in the exact JSON format specified. This is a demonstration of resume parsing functionality.
-
-Generate a complete resume with realistic information including:
-- Personal contact details
-- Professional summary (2-3 sentences)
-- 3-4 work experiences with achievements
-- Education background
-- Technical and soft skills
-- 2-3 projects with descriptions
-- 1-2 professional certifications
-
-Use realistic company names, dates, and professional details that would appear on an actual resume.`;
-
-		console.log('📄 Sending to OpenAI for resume parsing:');
-		console.log('File:', file.name);
-		console.log('Size:', this.formatFileSize(file.size));
-		console.log('Prompt:', intelligentPrompt);
-		console.log('---');
-
-		return {
-			success: true,
-			extractedText: intelligentPrompt,
-			metadata: {
-				fileSize: file.size,
-				fileName: this.generateSafeFileName(file.name),
-				pageCount: 1,
-			},
-		};
-	}
-
-	/**
 	 * Method 1: Basic PDF text extraction using simple binary analysis
 	 * @param arrayBuffer
 	 */
@@ -301,10 +264,9 @@ Use realistic company names, dates, and professional details that would appear o
 
 		let result = '';
 		for (let i = 0; i < hex.length; i += 2) {
-			const hexPair = hex.substr(i, 2);
+			const hexPair = hex.substring(i, i + 2);
 			const charCode = parseInt(hexPair, 16);
 			if (charCode >= 32 && charCode <= 126) {
-				// printable ASCII
 				result += String.fromCharCode(charCode);
 			}
 		}
@@ -318,29 +280,9 @@ Use realistic company names, dates, and professional details that would appear o
 	private static async requestManualTextInput(
 		file: File
 	): Promise<PDFProcessingResult> {
-		console.log('🔄 Requesting manual text input...');
-
-		// For now, create a helpful prompt asking for manual input
-		const manualPrompt = `PDF automatic extraction failed for file: ${file.name}
-
-To process this resume, please copy and paste the text content of your PDF below.
-
-You can:
-1. Open your PDF in any PDF viewer
-2. Select all text (Ctrl+A / Cmd+A)
-3. Copy the text (Ctrl+C / Cmd+C)
-4. Paste it in a text area we'll provide
-
-This will allow OpenAI to parse your actual resume content accurately.`;
-
 		return {
-			success: true,
-			extractedText: manualPrompt,
-			metadata: {
-				fileSize: file.size,
-				fileName: this.generateSafeFileName(file.name),
-				pageCount: 1,
-			},
+			success: false,
+			error: `Could not extract text from ${file.name}. Please try a different PDF file.`,
 		};
 	}
 
@@ -354,11 +296,14 @@ This will allow OpenAI to parse your actual resume content accurately.`;
 
 		// First try conservative cleaning
 		let cleaned = this.cleanExtractedTextDefault(text);
-		
+
 		// If still too long, use aggressive cleaning
 		const estimatedTokens = cleaned.length / 4; // rough estimate: 1 token ≈ 4 characters
-		if (estimatedTokens > 7000) { // leaving buffer below 8192 limit
-			console.log('⚠️ Text still too long after default cleaning, using aggressive approach');
+		if (estimatedTokens > 7000) {
+			// leaving buffer below 8192 limit
+			console.log(
+				'⚠️ Text still too long after default cleaning, using aggressive approach'
+			);
 			cleaned = this.cleanExtractedTextAggressive(text);
 		}
 
@@ -375,7 +320,7 @@ This will allow OpenAI to parse your actual resume content accurately.`;
 	 */
 	private static cleanExtractedTextDefault(text: string): string {
 		console.log('🧹 Applying default (conservative) cleaning...');
-		
+
 		let cleaned = text
 			// Remove binary/metadata noise more aggressively
 			.replace(/[^\x09-\x0D\x20-\x7E]/g, ' ') // keep printable ASCII + common whitespace chars
@@ -384,7 +329,10 @@ This will allow OpenAI to parse your actual resume content accurately.`;
 			.replace(/\b[A-Za-z0-9+/]{20,}={0,2}\b/g, ' ') // remove base64 strings
 			.replace(/\b[a-f0-9]{16,}\b/gi, ' ') // remove hash-like strings
 			.replace(/\\[a-zA-Z]{2,}/g, ' ') // remove PDF commands
-			.replace(/\b(stream|endstream|obj|endobj|xref|trailer|mixed|Renderer|Canva|Producer|Creator|ModDate|CreationDate)\b/gi, ' ') // remove PDF keywords
+			.replace(
+				/\b(stream|endstream|obj|endobj|xref|trailer|mixed|Renderer|Canva|Producer|Creator|ModDate|CreationDate)\b/gi,
+				' '
+			) // remove PDF keywords
 			.replace(/\([^)]{30,}\)/g, ' ') // remove long parenthetical content
 			.replace(/\b[A-Z]{3,}\b/g, ' ') // remove long uppercase sequences
 			.replace(/\b\d{4,}\b/g, ' ') // remove long number sequences
@@ -394,19 +342,27 @@ This will allow OpenAI to parse your actual resume content accurately.`;
 			.trim();
 
 		// Extract meaningful sentences and words
-		const sentences = cleaned.split(/[.!?]+/).filter(sentence => {
+		const sentences = cleaned.split(/[.!?]+/).filter((sentence) => {
 			const words = sentence.trim().split(/\s+/);
-			return words.length >= 3 && words.length <= 50 && 
-				   words.some(word => word.length > 3 && /[a-zA-Z]/.test(word));
+			return (
+				words.length >= 3 &&
+				words.length <= 50 &&
+				words.some((word) => word.length > 3 && /[a-zA-Z]/.test(word))
+			);
 		});
 
 		cleaned = sentences.join('. ').trim();
 
 		// Limit length but be more generous
-		if (cleaned.length > 20000) { // ~5000 tokens worth
+		if (cleaned.length > 20000) {
+			// ~5000 tokens worth
 			let cutPoint = cleaned.lastIndexOf('.', 20000);
-			if (cutPoint === -1) cutPoint = cleaned.lastIndexOf(' ', 20000);
-			if (cutPoint === -1) cutPoint = 20000;
+			if (cutPoint === -1) {
+				cutPoint = cleaned.lastIndexOf(' ', 20000);
+			}
+			if (cutPoint === -1) {
+				cutPoint = 20000;
+			}
 			cleaned = cleaned.substring(0, cutPoint) + '...';
 			console.log('⚠️ Text truncated in default cleaning');
 		}
@@ -421,7 +377,7 @@ This will allow OpenAI to parse your actual resume content accurately.`;
 	 */
 	private static cleanExtractedTextAggressive(text: string): string {
 		console.log('🧹 Applying aggressive cleaning...');
-		
+
 		let cleaned = text
 			// Remove binary/metadata junk
 			.replace(/[^\x20-\x7E\s]/g, ' ') // keep only printable ASCII + whitespace
@@ -461,9 +417,12 @@ This will allow OpenAI to parse your actual resume content accurately.`;
 			.trim();
 
 		// Aggressive length limit
-		if (cleaned.length > 24000) { // ~6000 tokens worth
+		if (cleaned.length > 24000) {
+			// ~6000 tokens worth
 			let cutPoint = cleaned.lastIndexOf(' ', 24000);
-			if (cutPoint === -1) cutPoint = 24000;
+			if (cutPoint === -1) {
+				cutPoint = 24000;
+			}
 			cleaned = cleaned.substring(0, cutPoint) + '...';
 			console.log('⚠️ Text truncated in aggressive cleaning');
 		}

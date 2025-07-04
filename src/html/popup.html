@@ -61,10 +61,14 @@
             <div class="resume-status" id="resumeStatus">
               <div class="resume-uploaded hidden" id="resumeUploaded">
                 <div class="status-icon">✅</div>
-                <span>Resume processed successfully</span>
+                <span class="resume-info-text clickable" id="resumeInfoText">Resume processed successfully</span>
                 <button class="delete-btn" id="deleteResumeBtn" title="Delete resume data">
                   <span class="delete-icon">×</span>
                 </button>
+              </div>
+              <div class="resume-json-viewer hidden" id="resumeJsonViewer">
+                <textarea id="resumeJsonTextarea" class="json-textarea" readonly></textarea>
+                <button class="btn btn-small" id="closeJsonViewer">Close</button>
               </div>
             </div>
           </div>

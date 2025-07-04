@@ -174,4 +174,18 @@ export function initializeEventHandlers(
 			}
 		});
 	}
+
+	// Resume info text click to show JSON
+	if (elements.resumeInfoText) {
+		elements.resumeInfoText.addEventListener('click', async () => {
+			await resumeManager.showResumeJson(elements);
+		});
+	}
+
+	// Close JSON viewer button
+	if (elements.closeJsonViewer) {
+		elements.closeJsonViewer.addEventListener('click', () => {
+			resumeManager.hideResumeJson(elements);
+		});
+	}
 }

@@ -167,43 +167,54 @@ class OpenAIService {
 			console.log('📥 OpenAI Response (raw):', messageContent);
 
 			// Extract JSON from the response
-			let jsonMatch = messageContent.match(/\{[\s\S]*\}/);
+			const jsonMatch = messageContent.match(/\{[\s\S]*\}/);
 			if (jsonMatch) {
 				console.log(
 					'✅ Found JSON in response:',
 					jsonMatch[0].substring(0, 200) + '...'
 				);
-				
+
 				let jsonText = jsonMatch[0];
-				
+
 				// Try to fix common JSON issues
 				try {
 					const parsedData = JSON.parse(jsonText);
-					
+
 					// Add metadata
 					parsedData.uploadedAt = new Date().toISOString();
 					parsedData.fileName = fileName;
 
-					console.log('✅ Successfully parsed resume data:', parsedData);
+					console.log(
+						'✅ Successfully parsed resume data:',
+						parsedData
+					);
 					return parsedData as ResumeData;
 				} catch (parseError) {
-					console.warn('⚠️ JSON parse failed, attempting to fix...', parseError);
-					
+					console.warn(
+						'⚠️ JSON parse failed, attempting to fix...',
+						parseError
+					);
+
 					// Try to fix incomplete JSON
 					jsonText = this.attemptJsonFix(jsonText);
-					
+
 					try {
 						const parsedData = JSON.parse(jsonText);
-						
+
 						// Add metadata
 						parsedData.uploadedAt = new Date().toISOString();
 						parsedData.fileName = fileName;
 
-						console.log('✅ Successfully parsed fixed JSON:', parsedData);
+						console.log(
+							'✅ Successfully parsed fixed JSON:',
+							parsedData
+						);
 						return parsedData as ResumeData;
 					} catch (fixError) {
 						console.error('❌ Failed to fix JSON:', fixError);
-						throw new Error('Failed to parse JSON even after fix attempt');
+						throw new Error(
+							'Failed to parse JSON even after fix attempt'
+						);
 					}
 				}
 			} else {
@@ -306,40 +317,42 @@ Extract all personal information, work experience, education, skills, projects, 
 	 */
 	private attemptJsonFix(jsonText: string): string {
 		console.log('🔧 Attempting to fix JSON...');
-		
+
 		let fixed = jsonText.trim();
-		
+
 		// Count braces to see if we need to close them
 		const openBraces = (fixed.match(/\{/g) || []).length;
 		const closeBraces = (fixed.match(/\}/g) || []).length;
 		const missingCloseBraces = openBraces - closeBraces;
-		
+
 		// Count brackets for arrays
 		const openBrackets = (fixed.match(/\[/g) || []).length;
 		const closeBrackets = (fixed.match(/\]/g) || []).length;
 		const missingCloseBrackets = openBrackets - closeBrackets;
-		
-		console.log(`Missing closing braces: ${missingCloseBraces}, brackets: ${missingCloseBrackets}`);
-		
+
+		console.log(
+			`Missing closing braces: ${missingCloseBraces}, brackets: ${missingCloseBrackets}`
+		);
+
 		// Remove trailing comma if present
 		fixed = fixed.replace(/,\s*$/, '');
-		
+
 		// Add missing closing brackets first
 		for (let i = 0; i < missingCloseBrackets; i++) {
 			fixed += ']';
 		}
-		
+
 		// Add missing closing braces
 		for (let i = 0; i < missingCloseBraces; i++) {
 			fixed += '}';
 		}
-		
+
 		// Try to fix common issues with incomplete strings
 		fixed = fixed.replace(/,\s*[\]}]/g, '$1'); // remove trailing commas
 		fixed = fixed.replace(/"[^"]*$/, '""'); // close incomplete strings
-		
+
 		console.log('🔧 Fixed JSON preview:', fixed.substring(0, 200) + '...');
-		
+
 		return fixed;
 	}
 

@@ -36,6 +36,10 @@ export interface DOMElementCache {
 	uploadResumeBtn: HTMLButtonElement | null;
 	resumeUploaded: HTMLElement | null;
 	deleteResumeBtn: HTMLButtonElement | null;
+	resumeInfoText: HTMLElement | null;
+	resumeJsonViewer: HTMLElement | null;
+	resumeJsonTextarea: HTMLTextAreaElement | null;
+	closeJsonViewer: HTMLButtonElement | null;
 }
 
 /**
@@ -84,6 +88,14 @@ export function cacheDOMElements(): DOMElementCache {
 		resumeUploaded: document.getElementById('resumeUploaded'),
 		deleteResumeBtn: document.getElementById(
 			'deleteResumeBtn'
+		) as HTMLButtonElement,
+		resumeInfoText: document.getElementById('resumeInfoText'),
+		resumeJsonViewer: document.getElementById('resumeJsonViewer'),
+		resumeJsonTextarea: document.getElementById(
+			'resumeJsonTextarea'
+		) as HTMLTextAreaElement,
+		closeJsonViewer: document.getElementById(
+			'closeJsonViewer'
 		) as HTMLButtonElement,
 	};
 }

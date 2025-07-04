@@ -172,14 +172,15 @@ function updateResumeDisplay(
 		elements.resumeUploaded.classList.remove('hidden');
 
 		// Update text to show filename and date
-		const uploadedText = elements.resumeUploaded.querySelector('span');
-		if (uploadedText) {
+		if (elements.resumeInfoText) {
 			const date = new Date(resumeData.uploadedAt).toLocaleDateString();
-			uploadedText.textContent = `Resume uploaded: ${resumeData.fileName} (${date})`;
+			elements.resumeInfoText.textContent = `Resume uploaded: ${resumeData.fileName} (${date})`;
 		}
 	} else {
 		// Hide uploaded status
 		elements.resumeUploaded.classList.add('hidden');
+		// Also hide JSON viewer if it's open
+		hideResumeJson(elements);
 	}
 }
 
@@ -238,6 +239,45 @@ function clearFileDisplay(elements: DOMElementCache): void {
  */
 export function handleRemoveFile(elements: DOMElementCache): void {
 	clearFileDisplay(elements);
+}
+
+/**
+ * Shows the resume JSON data in a textarea
+ * @param {DOMElementCache} elements - Cached DOM elements
+ */
+export async function showResumeJson(elements: DOMElementCache): Promise<void> {
+	try {
+		const resumeData = await storageService.getResumeData();
+		if (!resumeData) {
+			showMessage('No resume data found', elements, 'error');
+			return;
+		}
+
+		if (elements.resumeJsonTextarea && elements.resumeJsonViewer) {
+			// Format JSON nicely
+			const formattedJson = JSON.stringify(resumeData, null, 2);
+			elements.resumeJsonTextarea.value = formattedJson;
+
+			// Show the JSON viewer
+			elements.resumeJsonViewer.classList.remove('hidden');
+
+			// Scroll to show the textarea
+			elements.resumeJsonViewer.scrollIntoView({ behavior: 'smooth' });
+		}
+	} catch (error) {
+		console.error('Error showing resume JSON:', error);
+		showMessage('Failed to load resume data', elements, 'error');
+	}
+}
+
+/**
+ * Hides the resume JSON viewer
+ * @param {DOMElementCache} elements - Cached DOM elements
+ */
+export function hideResumeJson(elements: DOMElementCache): void {
+	if (elements.resumeJsonViewer) {
+		elements.resumeJsonViewer.classList.add('hidden');
+	}
 }
 
 export {};
