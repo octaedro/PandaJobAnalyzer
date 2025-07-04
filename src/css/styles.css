@@ -1,7 +1,7 @@
 /* General Styles */
 :root {
-  --primary-color: #4CAF50;
-  --primary-dark: #2e7d32;
+  --primary-color: #4A90E2;
+  --primary-dark: #2C5282;
   --text-color: #2c3e50;
   --background-color: #f5f7fa;
   --card-bg: #ffffff;
@@ -9,8 +9,8 @@
   --shadow-color: rgba(0, 0, 0, 0.05);
   --accent-color: #f8b3c5;
   --accent-light: #ffd6e0;
-  --success-color: #93d5b4;
-  --button-hover: #3b8c3f;
+  --success-color: #93C5E8;
+  --button-hover: #2B6CB0;
 }
 
 * {
@@ -45,6 +45,13 @@ header {
   position: relative;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border-color);
+}
+
+.header-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+  object-fit: contain;
 }
 
 header h1 {
@@ -111,7 +118,7 @@ input {
 input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(163, 217, 165, 0.3);
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.3);
 }
 
 button {
@@ -234,7 +241,7 @@ button:active {
 }
 
 .spinner {
-  border: 3px solid rgba(163, 217, 165, 0.2);
+  border: 3px solid rgba(74, 144, 226, 0.2);
   border-radius: 50%;
   border-top: 3px solid var(--primary-dark);
   width: 36px;
