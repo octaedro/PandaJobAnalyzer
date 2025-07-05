@@ -67,8 +67,12 @@
                 </button>
               </div>
               <div class="resume-json-viewer hidden" id="resumeJsonViewer">
-                <textarea id="resumeJsonTextarea" class="json-textarea" readonly></textarea>
-                <button class="btn btn-small" id="closeJsonViewer">Close</button>
+                <textarea id="resumeJsonTextarea" class="json-textarea"></textarea>
+                <div class="json-viewer-actions">
+                  <button class="btn btn-small btn-primary" id="updateResumeBtn">Update</button>
+                  <button class="btn btn-small" id="closeJsonViewer">Close</button>
+                </div>
+                <div class="json-validation-message hidden" id="jsonValidationMessage"></div>
               </div>
             </div>
           </div>

@@ -40,6 +40,8 @@ export interface DOMElementCache {
 	resumeJsonViewer: HTMLElement | null;
 	resumeJsonTextarea: HTMLTextAreaElement | null;
 	closeJsonViewer: HTMLButtonElement | null;
+	updateResumeBtn: HTMLButtonElement | null;
+	jsonValidationMessage: HTMLElement | null;
 }
 
 /**
@@ -97,6 +99,10 @@ export function cacheDOMElements(): DOMElementCache {
 		closeJsonViewer: document.getElementById(
 			'closeJsonViewer'
 		) as HTMLButtonElement,
+		updateResumeBtn: document.getElementById(
+			'updateResumeBtn'
+		) as HTMLButtonElement,
+		jsonValidationMessage: document.getElementById('jsonValidationMessage'),
 	};
 }
 

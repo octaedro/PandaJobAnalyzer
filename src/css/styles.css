@@ -637,4 +637,50 @@ button:active {
 .json-textarea:focus {
   outline: none;
   border-color: var(--primary-color);
+}
+
+/* JSON viewer actions */
+.json-viewer-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.json-validation-message {
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.json-validation-message.error {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+}
+
+.json-validation-message.success {
+  background-color: #efe;
+  border: 1px solid #cfc;
+  color: #3c3;
+}
+
+/* Button variations */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--button-hover);
+}
+
+.btn-primary:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.btn-primary:disabled:hover {
+  background-color: #9ca3af;
+  transform: none;
 } 

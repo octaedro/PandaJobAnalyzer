@@ -188,4 +188,18 @@ export function initializeEventHandlers(
 			resumeManager.hideResumeJson(elements);
 		});
 	}
+
+	// Update resume button
+	if (elements.updateResumeBtn) {
+		elements.updateResumeBtn.addEventListener('click', async () => {
+			await resumeManager.handleResumeUpdate(elements);
+		});
+	}
+
+	// JSON textarea input for real-time validation
+	if (elements.resumeJsonTextarea) {
+		elements.resumeJsonTextarea.addEventListener('input', () => {
+			resumeManager.validateJson(elements);
+		});
+	}
 }

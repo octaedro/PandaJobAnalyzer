@@ -261,6 +261,9 @@ export async function showResumeJson(elements: DOMElementCache): Promise<void> {
 			// Show the JSON viewer
 			elements.resumeJsonViewer.classList.remove('hidden');
 
+			// Initialize validation
+			validateJson(elements);
+
 			// Scroll to show the textarea
 			elements.resumeJsonViewer.scrollIntoView({ behavior: 'smooth' });
 		}
@@ -277,6 +280,124 @@ export async function showResumeJson(elements: DOMElementCache): Promise<void> {
 export function hideResumeJson(elements: DOMElementCache): void {
 	if (elements.resumeJsonViewer) {
 		elements.resumeJsonViewer.classList.add('hidden');
+	}
+	// Clear validation message
+	if (elements.jsonValidationMessage) {
+		elements.jsonValidationMessage.classList.add('hidden');
+		elements.jsonValidationMessage.classList.remove('error', 'success');
+	}
+}
+
+/**
+ * Validates the JSON in the textarea and shows validation messages
+ * @param {DOMElementCache} elements - Cached DOM elements
+ */
+export function validateJson(elements: DOMElementCache): void {
+	if (
+		!elements.resumeJsonTextarea ||
+		!elements.updateResumeBtn ||
+		!elements.jsonValidationMessage
+	) {
+		return;
+	}
+
+	const jsonText = elements.resumeJsonTextarea.value.trim();
+
+	if (!jsonText) {
+		// Empty textarea
+		elements.updateResumeBtn.disabled = true;
+		elements.jsonValidationMessage.classList.add('hidden');
+		return;
+	}
+
+	try {
+		// Try to parse the JSON
+		const parsed = JSON.parse(jsonText);
+
+		// Basic validation of required structure
+		if (
+			!parsed.personalInfo ||
+			!parsed.summary ||
+			!parsed.experience ||
+			!parsed.skills
+		) {
+			throw new Error(
+				'Missing required resume fields (personalInfo, summary, experience, skills)'
+			);
+		}
+
+		// JSON is valid
+		elements.updateResumeBtn.disabled = false;
+		elements.jsonValidationMessage.textContent = '✓ Valid JSON format';
+		elements.jsonValidationMessage.className =
+			'json-validation-message success';
+		elements.jsonValidationMessage.classList.remove('hidden');
+	} catch (error) {
+		// JSON is invalid
+		elements.updateResumeBtn.disabled = true;
+		elements.jsonValidationMessage.textContent = `❌ Invalid JSON: ${error instanceof Error ? error.message : 'Parse error'}`;
+		elements.jsonValidationMessage.className =
+			'json-validation-message error';
+		elements.jsonValidationMessage.classList.remove('hidden');
+	}
+}
+
+/**
+ * Handles updating the resume data with the edited JSON
+ * @param {DOMElementCache} elements - Cached DOM elements
+ */
+export async function handleResumeUpdate(
+	elements: DOMElementCache
+): Promise<void> {
+	if (!elements.resumeJsonTextarea) {
+		showMessage('Error: JSON textarea not found', elements, 'error');
+		return;
+	}
+
+	const jsonText = elements.resumeJsonTextarea.value.trim();
+
+	try {
+		// Parse and validate the JSON
+		const updatedData = JSON.parse(jsonText);
+
+		// Basic validation
+		if (
+			!updatedData.personalInfo ||
+			!updatedData.summary ||
+			!updatedData.experience ||
+			!updatedData.skills
+		) {
+			throw new Error('Missing required resume fields');
+		}
+
+		// Sanitize the data for security
+		const sanitizedData = PDFProcessor.sanitizeResumeData(updatedData);
+
+		// Preserve metadata
+		const existingData = await storageService.getResumeData();
+		if (existingData) {
+			sanitizedData.uploadedAt = existingData.uploadedAt;
+			sanitizedData.fileName = existingData.fileName;
+		}
+
+		// Save the updated data
+		await storageService.saveResumeData(sanitizedData);
+
+		// Update the UI display
+		updateResumeDisplay(sanitizedData, elements);
+
+		// Show success message
+		showMessage('Resume data updated successfully!', elements);
+
+		// Hide the JSON viewer
+		hideResumeJson(elements);
+	} catch (error) {
+		console.error('Error updating resume:', error);
+		showMessage(
+			`Failed to update resume: ${error instanceof Error ? error.message : 'Invalid JSON'}`,
+			elements,
+			'error'
+		);
 	}
 }
 
