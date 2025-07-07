@@ -738,6 +738,59 @@ button:active {
   margin-top: 8px;
 }
 
+/* Parse Job Section Styles */
+.parse-job-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  padding: 20px 16px;
+}
+
+.parse-job-description {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #6c757d;
+  margin: 0;
+  max-width: 300px;
+  text-align: center;
+}
+
+.btn-parse-job {
+  background-color: #dc3545 !important; /* Matte red color */
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 14px 24px !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3) !important;
+  min-width: 180px;
+}
+
+.btn-parse-job:hover {
+  background-color: #c82333 !important; /* Darker red on hover */
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4) !important;
+}
+
+.btn-parse-job:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3) !important;
+}
+
+/* Retry/Analyze Again Button Container */
+.retry-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  margin-top: 20px;
+}
+
 /* Ranking Tab Styles */
 .ranking-container {
   display: flex;
