@@ -106,10 +106,33 @@
       <div class="section-content">
         <div class="tabs">
           <div class="tab-buttons">
+            <button class="tab-btn hidden" data-tab="ranking" id="rankingTabBtn">Ranking</button>
             <button class="tab-btn active" data-tab="job">Job Details</button>
             <button class="tab-btn" data-tab="company">Info</button>
           </div>
           
+          <div class="tab-content" id="rankingTab">
+            <div class="ranking-container">
+              <div class="match-circle-container">
+                <div class="match-circle" id="matchCircle">
+                  <span class="match-percentage" id="matchPercentage">--</span>
+                  <span class="match-label">Match</span>
+                </div>
+                <div class="match-status" id="matchStatus">Not evaluated</div>
+              </div>
+              
+              <div class="missing-section">
+                <h3>Needed to reach 100%</h3>
+                <ul class="missing-list" id="missingList">
+                  <li>No data available</li>
+                </ul>
+                <p class="missing-explanation">
+                  These requirements represent what's needed to achieve a perfect 100% match with this job posting based on your current resume.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div class="tab-content active" id="jobTab">
             <!-- Job Details will be rendered here -->
             <h3>Job Location</h3>
@@ -138,6 +161,9 @@
         </div>
       </div>
     </section>
+
+    <!-- Message Area -->
+    <div id="messageArea" class="message-area hidden"></div>
 
     <section id="parseJob" class="section action-section">
       <button class="btn btn-primary btn-large">

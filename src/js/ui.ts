@@ -42,6 +42,12 @@ export interface DOMElementCache {
 	closeJsonViewer: HTMLButtonElement | null;
 	updateResumeBtn: HTMLButtonElement | null;
 	jsonValidationMessage: HTMLElement | null;
+	// Ranking elements
+	rankingTabBtn: HTMLElement | null;
+	matchCircle: HTMLElement | null;
+	matchPercentage: HTMLElement | null;
+	matchStatus: HTMLElement | null;
+	missingList: HTMLElement | null;
 }
 
 /**
@@ -103,6 +109,12 @@ export function cacheDOMElements(): DOMElementCache {
 			'updateResumeBtn'
 		) as HTMLButtonElement,
 		jsonValidationMessage: document.getElementById('jsonValidationMessage'),
+		// Ranking elements
+		rankingTabBtn: document.getElementById('rankingTabBtn'),
+		matchCircle: document.getElementById('matchCircle'),
+		matchPercentage: document.getElementById('matchPercentage'),
+		matchStatus: document.getElementById('matchStatus'),
+		missingList: document.getElementById('missingList'),
 	};
 }
 
@@ -182,6 +194,9 @@ export function renderResults(
 			elements.companyReviewsEl.textContent =
 				'Error: No valid results data found.';
 		}
+		
+		// Hide ranking tab when there's no valid data
+		toggleRankingTab(false, elements);
 		return;
 	}
 
@@ -287,6 +302,19 @@ export function renderResults(
 		}
 	});
 
+	// Handle ranking tab logic
+	const hasMatchData = typeof results.match === 'number' && Array.isArray(results.missing);
+	
+	if (hasMatchData) {
+		// Update ranking tab with data
+		updateRankingTab(results.match!, results.missing!, elements);
+		// Show ranking tab and make it active by default
+		toggleRankingTab(true, elements);
+	} else {
+		// Hide ranking tab if no match data
+		toggleRankingTab(false, elements);
+	}
+
 	showElement(elements.resultsSection);
 }
 
@@ -369,8 +397,8 @@ let messageTimeoutId: number | null = null; // Store timeout ID to clear if a ne
 export function showMessage(
 	message: string,
 	elements: DOMElementCache,
-	type: 'info' | 'error' = 'info',
-	timeout: number = 3000
+	type: 'info' | 'error' | 'warning' | 'success' = 'info',
+	timeout: number = 0 // Changed default to 0 (permanent) for error messages
 ): void {
 	if (!elements.messageArea) {
 		// Fallback if message area not found, but still log to console
@@ -386,7 +414,11 @@ export function showMessage(
 	}
 
 	const msgArea = elements.messageArea;
-	msgArea.textContent = message;
+	
+	// Handle multiline messages by converting \n to <br>
+	const formattedMessage = message.replace(/\n/g, '<br>');
+	msgArea.innerHTML = formattedMessage;
+	
 	msgArea.className = `message-area ${type}`;
 	showElement(msgArea);
 
@@ -397,11 +429,26 @@ export function showMessage(
 	}
 
 	// Set timeout to hide the message, unless timeout is 0 (permanent)
+	// For error messages, default to permanent (timeout = 0)
 	if (timeout > 0) {
 		messageTimeoutId = window.setTimeout(() => {
 			hideElement(msgArea);
 			messageTimeoutId = null;
 		}, timeout);
+	}
+}
+
+/**
+ * Hide the message area
+ * @param {DOMElementCache} elements - Cached DOM elements.
+ */
+export function hideMessage(elements: DOMElementCache): void {
+	if (elements.messageArea) {
+		hideElement(elements.messageArea);
+		if (messageTimeoutId) {
+			clearTimeout(messageTimeoutId);
+			messageTimeoutId = null;
+		}
 	}
 }
 
@@ -425,6 +472,135 @@ export function updateApiKeyDisplay(
 	if (elements.clearApiKeyBtn) {
 		// Show the clear button only if an API key exists
 		toggleElementVisibility(elements.clearApiKeyBtn, !!apiKey);
+	}
+}
+
+/**
+ * Updates the ranking tab with match data
+ * @param {number} match - Match percentage (1-100)
+ * @param {string[]} missing - Array of missing requirements
+ * @param {DOMElementCache} elements - Cached DOM elements
+ */
+export function updateRankingTab(
+	match: number,
+	missing: string[],
+	elements: DOMElementCache
+): void {
+	if (!elements.matchPercentage || !elements.matchStatus || !elements.missingList || !elements.matchCircle) {
+		return;
+	}
+
+	// Update percentage
+	elements.matchPercentage.textContent = `${match}%`;
+
+	// Update status and colors based on match percentage
+	let statusText = '';
+	let statusClass = '';
+	let circleClass = '';
+
+	if (match < 45) {
+		statusText = 'Poor match';
+		statusClass = 'poor';
+		circleClass = 'poor';
+	} else if (match >= 45 && match < 65) {
+		statusText = 'Medium match';
+		statusClass = 'medium';
+		circleClass = 'medium';
+	} else if (match >= 65 && match < 90) {
+		statusText = 'Good match';
+		statusClass = 'good';
+		circleClass = 'good';
+	} else {
+		statusText = 'Great match!';
+		statusClass = 'great';
+		circleClass = 'great';
+	}
+
+	// Update status
+	elements.matchStatus.textContent = statusText;
+	elements.matchStatus.className = `match-status ${statusClass}`;
+
+	// Update circle
+	elements.matchCircle.className = `match-circle ${circleClass}`;
+
+	// Update missing requirements list
+	if (elements.missingList) {
+		elements.missingList.innerHTML = '';
+		if (missing && missing.length > 0) {
+			missing.forEach(requirement => {
+				const li = document.createElement('li');
+				li.textContent = requirement;
+				elements.missingList!.appendChild(li);
+			});
+		} else {
+			const li = document.createElement('li');
+			li.textContent = 'All requirements met!';
+			li.style.color = '#28a745';
+			elements.missingList.appendChild(li);
+		}
+	}
+}
+
+/**
+ * Shows or hides the ranking tab based on available data
+ * @param {boolean} hasMatchData - Whether match data is available
+ * @param {DOMElementCache} elements - Cached DOM elements
+ */
+export function toggleRankingTab(hasMatchData: boolean, elements: DOMElementCache): void {
+	if (!elements.rankingTabBtn) {
+		return;
+	}
+
+	if (hasMatchData) {
+		// Show ranking tab and make it active
+		elements.rankingTabBtn.classList.remove('hidden');
+		
+		// Make ranking tab active and others inactive
+		const allTabBtns = document.querySelectorAll('.tab-btn');
+		const allTabContents = document.querySelectorAll('.tab-content');
+		
+		allTabBtns.forEach(btn => btn.classList.remove('active'));
+		allTabContents.forEach(content => {
+			content.classList.remove('active');
+			content.classList.add('hidden');
+			(content as HTMLElement).style.display = 'none';
+		});
+		
+		// Activate ranking tab
+		elements.rankingTabBtn.classList.add('active');
+		const rankingContent = document.getElementById('rankingTab');
+		if (rankingContent) {
+			rankingContent.classList.add('active');
+			rankingContent.classList.remove('hidden');
+			rankingContent.style.display = 'block';
+		}
+	} else {
+		// Hide ranking tab
+		elements.rankingTabBtn.classList.add('hidden');
+		
+		// If ranking was active, switch to job details
+		if (elements.rankingTabBtn.classList.contains('active')) {
+			elements.rankingTabBtn.classList.remove('active');
+			
+			const jobTabBtn = document.querySelector('[data-tab="job"]');
+			const jobTabContent = document.getElementById('jobTab');
+			const rankingContent = document.getElementById('rankingTab');
+			
+			// Hide ranking content
+			if (rankingContent) {
+				rankingContent.classList.remove('active');
+				rankingContent.classList.add('hidden');
+				rankingContent.style.display = 'none';
+			}
+			
+			// Show job details
+			if (jobTabBtn && jobTabContent) {
+				jobTabBtn.classList.add('active');
+				jobTabContent.classList.add('active');
+				jobTabContent.classList.remove('hidden');
+				jobTabContent.style.display = 'block';
+			}
+		}
 	}
 }
 

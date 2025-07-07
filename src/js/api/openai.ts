@@ -28,6 +28,8 @@ export interface AnalysisResult {
 		min?: string;
 		max?: string;
 	} | null;
+	match?: number;
+	missing?: string[];
 	[key: string]: unknown;
 }
 
@@ -65,22 +67,34 @@ class OpenAIService {
 
 	/**
 	 * Get default configuration for OpenAI
+	 * @param {any} resumeData - Optional resume data for matching analysis
 	 * @returns {OpenAIConfig} Default configuration
 	 */
-	getDefaultConfig(): OpenAIConfig {
+	getDefaultConfig(resumeData?: any): OpenAIConfig {
+		const baseFields = 
+			'- jobLocation (array of countries or regions)\n' +
+			'- requiredSkills (array of strings)\n' +
+			'- niceToHaveSkills (array of strings)\n' +
+			'- companySummary (string)\n' +
+			'- companyReviews (string or null)\n' +
+			'- salaryRange (object with min and max properties as strings, example: {"min": "$50,000", "max": "$70,000"}, or null if not found)\n';
+
+		const matchingFields = resumeData ? 
+			'- match (integer from 1 to 100 representing how well the candidate matches the job)\n' +
+			'- missing (array of specific things the candidate needs to achieve 100% match, e.g., ["Experience with AWS EC2", "React certification", "5+ years in leadership"])\n' : '';
+
+		const systemPrompt = 'You are a helpful assistant that analyzes job listings and extracts key information. Return a JSON object with the following fields:\n' +
+			baseFields + matchingFields +
+			'\nIMPORTANT: Ensure all values are simple strings or arrays of strings. For salaryRange, min and max must be text strings, not objects.';
+
+		const userPromptTemplate = resumeData ? 
+			'Analyze this job listing and extract key information. Also analyze how well this candidate matches the job based on their resume data.\n\nJob listing: {{content}}\n\nCandidate resume data: {{resumeData}}' :
+			'Analyze this job listing and extract key information: {{content}}';
+
 		return {
-			model: 'gpt-4',
-			systemPrompt:
-				'You are a helpful assistant that analyzes job listings and extracts key information. Return a JSON object with the following fields:\n' +
-				'- jobLocation (array of countries or regions)\n' +
-				'- requiredSkills (array of strings)\n' +
-				'- niceToHaveSkills (array of strings)\n' +
-				'- companySummary (string)\n' +
-				'- companyReviews (string or null)\n' +
-				'- salaryRange (object with min and max properties as strings, example: {"min": "$50,000", "max": "$70,000"}, or null if not found)\n\n' +
-				'IMPORTANT: Ensure all values are simple strings or arrays of strings. For salaryRange, min and max must be text strings, not objects.',
-			userPromptTemplate:
-				'Analyze this job listing and extract key information: {{content}}',
+			model: 'gpt-4o-mini',
+			systemPrompt,
+			userPromptTemplate,
 		};
 	}
 
@@ -88,17 +102,199 @@ class OpenAIService {
 	 * Analyze job listing using OpenAI API
 	 * @param {string} content - Job listing content
 	 * @param {string} apiKey - OpenAI API key
+	 * @param {any} resumeData - Optional resume data for matching analysis
 	 * @returns {Promise<AnalysisResult>} Analysis results
 	 */
-	analyzeJobListing(
+	async analyzeJobListing(
 		content: string,
-		apiKey: string
+		apiKey: string,
+		resumeData?: any
 	): Promise<AnalysisResult> {
+		const analysisId = Math.random().toString(36).substr(2, 9);
+		console.log(`🎯 [${analysisId}] analyzeJobListing called with:`);
+		console.log(`📄 [${analysisId}] Content length: ${content.length} characters`);
+		console.log(`👤 [${analysisId}] Has resume data: ${!!resumeData}`);
+		if (resumeData) {
+			console.log(`📄 [${analysisId}] Resume data size: ${JSON.stringify(resumeData).length} characters`);
+		}
+		
+		// Use single-call approach with optimized prompt
+		console.log(`✅ [${analysisId}] Using single-call approach with optimized prompts`);
+		
 		if (!this.config) {
-			this.config = this.getDefaultConfig();
+			this.config = this.getDefaultConfig(resumeData);
 		}
 
-		return this.makeApiRequest(content, apiKey);
+		console.log(`🔄 [${analysisId}] Calling makeApiRequest...`);
+		const result = await this.makeApiRequest(content, apiKey, resumeData);
+		console.log(`✅ [${analysisId}] makeApiRequest completed successfully`);
+		
+		return result;
+	}
+
+	/**
+	 * Step 1: Summarize job posting into structured data
+	 * @param {string} content - Job listing content
+	 * @param {string} apiKey - OpenAI API key
+	 * @returns {Promise<AnalysisResult>} Job summary
+	 */
+	private async summarizeJobPosting(content: string, apiKey: string): Promise<AnalysisResult> {
+		console.log('Step 1: Summarizing job posting...');
+		
+		const systemPrompt = 'You are a helpful assistant that analyzes job listings and extracts key information. Return a JSON object with the following fields:\n' +
+			'- jobLocation (array of countries or regions)\n' +
+			'- requiredSkills (array of strings)\n' +
+			'- niceToHaveSkills (array of strings)\n' +
+			'- companySummary (string)\n' +
+			'- companyReviews (string or null)\n' +
+			'- salaryRange (object with min and max properties as strings, example: {"min": "$50,000", "max": "$70,000"}, or null if not found)\n' +
+			'\nIMPORTANT: Ensure all values are simple strings or arrays of strings. For salaryRange, min and max must be text strings, not objects.';
+
+		const userPrompt = `Analyze this job listing and extract key information: ${content}`;
+
+		const prompt: OpenAIRequest = {
+			model: 'gpt-4o-mini',
+			messages: [
+				{
+					role: 'system',
+					content: systemPrompt,
+				},
+				{
+					role: 'user',
+					content: userPrompt,
+				},
+			],
+		};
+
+		console.log(`Job summary request size: ~${JSON.stringify(prompt).length} characters`);
+
+		return this.makeRequestWithRetry(prompt, apiKey, 'job summary');
+	}
+
+	/**
+	 * Make API request with retry logic for rate limiting
+	 * @param {OpenAIRequest} prompt - The request payload
+	 * @param {string} apiKey - OpenAI API key
+	 * @param {string} requestType - Type of request for logging
+	 * @param {number} maxRetries - Maximum retry attempts
+	 * @returns {Promise<any>} Parsed response
+	 */
+	private async makeRequestWithRetry(prompt: OpenAIRequest, apiKey: string, requestType: string, maxRetries = 3): Promise<any> {
+		const callId = Math.random().toString(36).substr(2, 9);
+		const payloadSize = JSON.stringify(prompt).length;
+		
+		console.log(`🚀 [${callId}] Starting ${requestType} - Payload size: ${payloadSize} characters`);
+		console.log(`📝 [${callId}] System prompt length: ${prompt.messages[0].content.length} chars`);
+		console.log(`📝 [${callId}] User prompt length: ${prompt.messages[1].content.length} chars`);
+		console.log(`🤖 [${callId}] Model: ${prompt.model}`);
+		
+		for (let attempt = 1; attempt <= maxRetries; attempt++) {
+			try {
+				console.log(`⏳ [${callId}] ${requestType} - Attempt ${attempt}/${maxRetries}`);
+				
+				const requestTimestamp = new Date().toISOString();
+				console.log(`🌐 [${callId}] Making fetch request at ${requestTimestamp}`);
+				
+				const response = await fetch(API_ENDPOINT, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${apiKey}`,
+					},
+					body: JSON.stringify(prompt),
+				});
+				
+				console.log(`📡 [${callId}] Response status: ${response.status} ${response.statusText}`);
+
+				if (response.ok) {
+					const data = await response.json() as OpenAIResponse;
+					const messageContent = data.choices[0].message.content;
+					const jsonMatch = messageContent.match(/\{[\s\S]*\}/);
+					if (jsonMatch) {
+						console.log(`✅ [${callId}] ${requestType} - Success on attempt ${attempt}`);
+						return JSON.parse(jsonMatch[0]);
+					} else {
+						throw new Error(`Failed to extract JSON from ${requestType} response`);
+					}
+				} else {
+					// Get error details from response
+					let errorMessage = `${requestType} API request failed with status ${response.status}`;
+					try {
+						const errorData = await response.json();
+						console.log(`❌ [${callId}] Error response:`, errorData);
+						
+						if (errorData.error) {
+							if (errorData.error.code === 'insufficient_quota') {
+								throw new Error(`💳 OpenAI Quota Exceeded\n\nYour OpenAI account has run out of credits. Please add credits to continue using the job analysis feature.\n\n🔗 Go to: https://platform.openai.com/account/billing`);
+							} else if (errorData.error.code === 'rate_limit_exceeded' || response.status === 429) {
+								// Rate limited - calculate backoff delay
+								const baseDelay = Math.pow(2, attempt) * 1000; // Exponential backoff: 2s, 4s, 8s
+								const jitter = Math.random() * 1000; // Add up to 1s random jitter
+								const delay = baseDelay + jitter;
+								
+								console.log(`⏳ [${callId}] Rate limited (429). Waiting ${Math.round(delay/1000)}s before attempt ${attempt + 1}...`);
+								
+								if (attempt < maxRetries) {
+									await new Promise(resolve => setTimeout(resolve, delay));
+									continue;
+								} else {
+									throw new Error(`${requestType} failed after ${maxRetries} attempts due to rate limiting. Please wait a few minutes and try again.`);
+								}
+							} else {
+								errorMessage = `OpenAI API Error: ${errorData.error.message || errorData.error.code}`;
+							}
+						}
+					} catch (parseError) {
+						// If we can't parse the error, use the original message
+						console.log(`⚠️ [${callId}] Could not parse error response`);
+					}
+					
+					throw new Error(errorMessage);
+				}
+			} catch (error) {
+				if (attempt === maxRetries) {
+					console.error(`${requestType} - Failed after ${maxRetries} attempts:`, error);
+					throw error;
+				}
+				console.log(`${requestType} - Attempt ${attempt} failed, retrying...`);
+			}
+		}
+	}
+
+	/**
+	 * Step 2: Match resume with job summary
+	 * @param {any} resumeData - Resume data
+	 * @param {AnalysisResult} jobSummary - Job summary from step 1
+	 * @param {string} apiKey - OpenAI API key
+	 * @returns {Promise<{match: number, missing: string[]}>} Match results
+	 */
+	private async matchResumeWithJob(resumeData: any, jobSummary: AnalysisResult, apiKey: string): Promise<{match: number, missing: string[]}> {
+		console.log('Step 2: Matching resume with job summary...');
+		
+		const systemPrompt = 'You are a helpful assistant that analyzes how well a candidate matches a job posting. Return a JSON object with the following fields:\n' +
+			'- match (integer from 1 to 100 representing how well the candidate matches the job)\n' +
+			'- missing (array of specific things the candidate needs to achieve 100% match, e.g., ["Experience with AWS EC2", "React certification", "5+ years in leadership"])\n' +
+			'\nAnalyze the candidate\'s resume against the job requirements and provide an accurate match percentage and specific missing requirements.';
+
+		const userPrompt = `Analyze how well this candidate matches the job based on their resume data and the job summary.\n\nJob Summary: ${JSON.stringify(jobSummary)}\n\nCandidate Resume: ${JSON.stringify(resumeData)}`;
+
+		const prompt: OpenAIRequest = {
+			model: 'gpt-4o-mini',
+			messages: [
+				{
+					role: 'system',
+					content: systemPrompt,
+				},
+				{
+					role: 'user',
+					content: userPrompt,
+				},
+			],
+		};
+
+		console.log(`Match request size: ~${JSON.stringify(prompt).length} characters`);
+
+		return this.makeRequestWithRetry(prompt, apiKey, 'resume matching');
 	}
 
 	/**
@@ -129,7 +325,7 @@ class OpenAIService {
 		console.log('📤 User prompt:', resumeUserPrompt);
 
 		const prompt: OpenAIRequest = {
-			model: 'gpt-4',
+			model: 'gpt-4o-mini',
 			messages: [
 				{
 					role: 'system',
@@ -360,20 +556,40 @@ Extract all personal information, work experience, education, skills, projects, 
 	 * Make API request to OpenAI
 	 * @param {string} content - Content to analyze
 	 * @param {string} apiKey - OpenAI API key
+	 * @param {any} resumeData - Optional resume data for matching analysis
 	 * @returns {Promise<AnalysisResult>} Analysis results
 	 */
-	private makeApiRequest(
+	private async makeApiRequest(
 		content: string,
-		apiKey: string
+		apiKey: string,
+		resumeData?: any
 	): Promise<AnalysisResult> {
 		if (!this.config) {
 			throw new Error('Configuration not set');
 		}
 
-		const userPrompt = this.config.userPromptTemplate.replace(
+		let userPrompt = this.config.userPromptTemplate.replace(
 			'{{content}}',
 			content
 		);
+
+		// Add resume data if available and under character limit
+		if (resumeData) {
+			const resumeString = JSON.stringify(resumeData);
+			console.log(`Resume data size: ${resumeString.length} characters`);
+			console.log(`Job content size: ${content.length} characters`);
+			
+			// Allow much larger resume data - OpenAI can handle it easily
+			if (resumeString.length <= 15000) {
+				userPrompt = userPrompt.replace('{{resumeData}}', resumeString);
+				console.log(`✅ Using resume data in analysis (${resumeString.length} chars)`);
+			} else {
+				console.log(`⚠️ Resume too large (${resumeString.length} chars), using original prompt without matching`);
+				// If resume is too long, use the original prompt without matching
+				userPrompt = 'Analyze this job listing and extract key information: ' + content;
+				this.config = this.getDefaultConfig(); // Reset config to non-matching version
+			}
+		}
 
 		const prompt: OpenAIRequest = {
 			model: this.config.model,
@@ -389,37 +605,9 @@ Extract all personal information, work experience, education, skills, projects, 
 			],
 		};
 
-		return fetch(API_ENDPOINT, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${apiKey}`,
-			},
-			body: JSON.stringify(prompt),
-		})
-			.then((response) => {
-				if (!response.ok) {
-					throw new Error(
-						`API request failed with status ${response.status}`
-					);
-				}
-				return response.json() as Promise<OpenAIResponse>;
-			})
-			.then((data) => {
-				try {
-					const messageContent = data.choices[0].message.content;
-					// Extract JSON from the response
-					const jsonMatch = messageContent.match(/\{[\s\S]*\}/);
-					if (jsonMatch) {
-						return JSON.parse(jsonMatch[0]) as AnalysisResult;
-					} else {
-						throw new Error('Failed to extract JSON from response');
-					}
-				} catch (e) {
-					console.error('Error parsing response:', e);
-					throw new Error('Failed to parse analysis results');
-				}
-			});
+		console.log(`Final request size: ~${JSON.stringify(prompt).length} characters`);
+
+		return this.makeRequestWithRetry(prompt, apiKey, 'job analysis');
 	}
 }
 

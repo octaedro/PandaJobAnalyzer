@@ -16,6 +16,7 @@ import {
 	showElement, // Keep needed visibility helpers
 	hideElement, // Keep needed visibility helpers
 	showMessage as showUIMessage, // Keep show message
+	hideMessage, // Add hide message
 } from './ui';
 import * as apiKeyManager from './apiKeyManager';
 import * as resumeManager from './resumeManager';
@@ -131,6 +132,9 @@ export class PandaJobAnalyzerApp {
 	 * @param {boolean} forceRefresh - If true, force a refresh from OpenAI even if results exist
 	 */
 	async handleParseJob(forceRefresh = false): Promise<void> {
+		// Clear any previous messages
+		hideMessage(this.elements);
+		
 		const apiKey = await apiKeyManager.getApiKey();
 
 		if (!apiKey) {
@@ -178,9 +182,14 @@ export class PandaJobAnalyzerApp {
 			const jobContent = await this.getCurrentTabContent();
 			console.log('handleParseJob: Got content, calling OpenAI...');
 
+			// Check if we have resume data for matching analysis
+			const resumeData = await storageService.getResumeData();
+			console.log('handleParseJob: Resume data found:', !!resumeData);
+
 			const results = await openAIService.analyzeJobListing(
 				jobContent,
-				apiKey
+				apiKey,
+				resumeData
 			);
 			console.log('handleParseJob: OpenAI results received:', results);
 
