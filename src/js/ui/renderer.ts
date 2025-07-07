@@ -111,7 +111,7 @@ class UIRendererService {
 	 * @param {string[]} skills - The skills to render
 	 */
 	private renderSkillsList(element: HTMLElement, skills: string[]): void {
-		element.innerHTML = '';
+		element.textContent = '';
 		if (Array.isArray(skills) && skills.length > 0) {
 			skills.forEach((skill) => {
 				const li = document.createElement('li');
@@ -119,7 +119,9 @@ class UIRendererService {
 				element.appendChild(li);
 			});
 		} else {
-			element.innerHTML = '<li>No specific skills mentioned</li>';
+			const li = document.createElement('li');
+			li.textContent = 'No specific skills mentioned';
+			element.appendChild(li);
 		}
 	}
 

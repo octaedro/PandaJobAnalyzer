@@ -160,6 +160,33 @@ export function toggleElementVisibility(
 import type { AnalysisResult } from './api/openai'; // Import type for results
 
 /**
+ * Safely creates a list of items without using innerHTML
+ * @param {string[]} items - Array of items to display
+ * @param {string} defaultText - Default text when no items
+ * @returns {DocumentFragment} Safe document fragment
+ */
+function createSafeList(
+	items: string[],
+	defaultText: string = 'Not specified'
+): DocumentFragment {
+	const fragment = document.createDocumentFragment();
+
+	if (items && items.length > 0) {
+		items.forEach((item) => {
+			const li = document.createElement('li');
+			li.textContent = item; // Safe text content
+			fragment.appendChild(li);
+		});
+	} else {
+		const li = document.createElement('li');
+		li.textContent = defaultText;
+		fragment.appendChild(li);
+	}
+
+	return fragment;
+}
+
+/**
  * Displays the analysis results in the UI tabs.
  * @param {unknown} resultsData - The analysis results object (needs type checking).
  * @param {DOMElementCache} elements - Cached DOM elements.
@@ -175,12 +202,16 @@ export function renderResults(
 				'Error: No valid results data found.';
 		}
 		if (elements.requiredSkillsEl) {
-			elements.requiredSkillsEl.innerHTML =
-				'<li>Error: No valid results data found.</li>';
+			elements.requiredSkillsEl.textContent = '';
+			elements.requiredSkillsEl.appendChild(
+				createSafeList([], 'Error: No valid results data found.')
+			);
 		}
 		if (elements.niceToHaveEl) {
-			elements.niceToHaveEl.innerHTML =
-				'<li>Error: No valid results data found.</li>';
+			elements.niceToHaveEl.textContent = '';
+			elements.niceToHaveEl.appendChild(
+				createSafeList([], 'Error: No valid results data found.')
+			);
 		}
 		if (elements.salaryRangeEl) {
 			elements.salaryRangeEl.textContent =
@@ -194,7 +225,7 @@ export function renderResults(
 			elements.companyReviewsEl.textContent =
 				'Error: No valid results data found.';
 		}
-		
+
 		// Hide ranking tab when there's no valid data
 		toggleRankingTab(false, elements);
 		return;
@@ -207,10 +238,12 @@ export function renderResults(
 		elements.jobLocationEl.textContent = 'Loading...';
 	}
 	if (elements.requiredSkillsEl) {
-		elements.requiredSkillsEl.innerHTML = '<li>Loading...</li>';
+		elements.requiredSkillsEl.textContent = '';
+		elements.requiredSkillsEl.appendChild(createSafeList([], 'Loading...'));
 	}
 	if (elements.niceToHaveEl) {
-		elements.niceToHaveEl.innerHTML = '<li>Loading...</li>';
+		elements.niceToHaveEl.textContent = '';
+		elements.niceToHaveEl.appendChild(createSafeList([], 'Loading...'));
 	}
 	if (elements.salaryRangeEl) {
 		elements.salaryRangeEl.textContent = 'Loading...';
@@ -241,30 +274,22 @@ export function renderResults(
 		elements.salaryRangeEl.textContent = 'Not specified in ad';
 	}
 
-	if (
-		results.requiredSkills &&
-		Array.isArray(results.requiredSkills) &&
-		results.requiredSkills.length > 0 &&
-		elements.requiredSkillsEl
-	) {
-		elements.requiredSkillsEl.innerHTML = results.requiredSkills
-			.map((skill: string) => `<li>${skill}</li>`)
-			.join('');
-	} else if (elements.requiredSkillsEl) {
-		elements.requiredSkillsEl.innerHTML = '<li>Not specified</li>';
+	if (elements.requiredSkillsEl) {
+		elements.requiredSkillsEl.textContent = '';
+		const skillsList = createSafeList(
+			results.requiredSkills || [],
+			'Not specified'
+		);
+		elements.requiredSkillsEl.appendChild(skillsList);
 	}
 
-	if (
-		results.niceToHaveSkills &&
-		Array.isArray(results.niceToHaveSkills) &&
-		results.niceToHaveSkills.length > 0 &&
-		elements.niceToHaveEl
-	) {
-		elements.niceToHaveEl.innerHTML = results.niceToHaveSkills
-			.map((skill: string) => `<li>${skill}</li>`)
-			.join('');
-	} else if (elements.niceToHaveEl) {
-		elements.niceToHaveEl.innerHTML = '<li>Not specified</li>';
+	if (elements.niceToHaveEl) {
+		elements.niceToHaveEl.textContent = '';
+		const niceToHaveList = createSafeList(
+			results.niceToHaveSkills || [],
+			'Not specified'
+		);
+		elements.niceToHaveEl.appendChild(niceToHaveList);
 	}
 
 	// --- Populate Company Details --- (Directly update elements)
@@ -303,8 +328,9 @@ export function renderResults(
 	});
 
 	// Handle ranking tab logic
-	const hasMatchData = typeof results.match === 'number' && Array.isArray(results.missing);
-	
+	const hasMatchData =
+		typeof results.match === 'number' && Array.isArray(results.missing);
+
 	if (hasMatchData) {
 		// Update ranking tab with data
 		updateRankingTab(results.match!, results.missing!, elements);
@@ -414,11 +440,18 @@ export function showMessage(
 	}
 
 	const msgArea = elements.messageArea;
-	
-	// Handle multiline messages by converting \n to <br>
-	const formattedMessage = message.replace(/\n/g, '<br>');
-	msgArea.innerHTML = formattedMessage;
-	
+
+	// Safely handle multiline messages without innerHTML
+	msgArea.textContent = ''; // Clear existing content
+	const lines = message.split('\n');
+	lines.forEach((line, index) => {
+		if (index > 0) {
+			msgArea.appendChild(document.createElement('br'));
+		}
+		const textNode = document.createTextNode(line);
+		msgArea.appendChild(textNode);
+	});
+
 	msgArea.className = `message-area ${type}`;
 	showElement(msgArea);
 
@@ -486,7 +519,12 @@ export function updateRankingTab(
 	missing: string[],
 	elements: DOMElementCache
 ): void {
-	if (!elements.matchPercentage || !elements.matchStatus || !elements.missingList || !elements.matchCircle) {
+	if (
+		!elements.matchPercentage ||
+		!elements.matchStatus ||
+		!elements.missingList ||
+		!elements.matchCircle
+	) {
 		return;
 	}
 
@@ -525,13 +563,13 @@ export function updateRankingTab(
 
 	// Update missing requirements list
 	if (elements.missingList) {
-		elements.missingList.innerHTML = '';
+		elements.missingList.textContent = '';
 		if (missing && missing.length > 0) {
-			missing.forEach(requirement => {
-				const li = document.createElement('li');
-				li.textContent = requirement;
-				elements.missingList!.appendChild(li);
-			});
+			const missingList = createSafeList(
+				missing,
+				'No requirements specified'
+			);
+			elements.missingList.appendChild(missingList);
 		} else {
 			const li = document.createElement('li');
 			li.textContent = 'All requirements met!';
@@ -546,7 +584,10 @@ export function updateRankingTab(
  * @param {boolean} hasMatchData - Whether match data is available
  * @param {DOMElementCache} elements - Cached DOM elements
  */
-export function toggleRankingTab(hasMatchData: boolean, elements: DOMElementCache): void {
+export function toggleRankingTab(
+	hasMatchData: boolean,
+	elements: DOMElementCache
+): void {
 	if (!elements.rankingTabBtn) {
 		return;
 	}
@@ -554,18 +595,18 @@ export function toggleRankingTab(hasMatchData: boolean, elements: DOMElementCach
 	if (hasMatchData) {
 		// Show ranking tab and make it active
 		elements.rankingTabBtn.classList.remove('hidden');
-		
+
 		// Make ranking tab active and others inactive
 		const allTabBtns = document.querySelectorAll('.tab-btn');
 		const allTabContents = document.querySelectorAll('.tab-content');
-		
-		allTabBtns.forEach(btn => btn.classList.remove('active'));
-		allTabContents.forEach(content => {
+
+		allTabBtns.forEach((btn) => btn.classList.remove('active'));
+		allTabContents.forEach((content) => {
 			content.classList.remove('active');
 			content.classList.add('hidden');
 			(content as HTMLElement).style.display = 'none';
 		});
-		
+
 		// Activate ranking tab
 		elements.rankingTabBtn.classList.add('active');
 		const rankingContent = document.getElementById('rankingTab');
@@ -577,22 +618,22 @@ export function toggleRankingTab(hasMatchData: boolean, elements: DOMElementCach
 	} else {
 		// Hide ranking tab
 		elements.rankingTabBtn.classList.add('hidden');
-		
+
 		// If ranking was active, switch to job details
 		if (elements.rankingTabBtn.classList.contains('active')) {
 			elements.rankingTabBtn.classList.remove('active');
-			
+
 			const jobTabBtn = document.querySelector('[data-tab="job"]');
 			const jobTabContent = document.getElementById('jobTab');
 			const rankingContent = document.getElementById('rankingTab');
-			
+
 			// Hide ranking content
 			if (rankingContent) {
 				rankingContent.classList.remove('active');
 				rankingContent.classList.add('hidden');
 				rankingContent.style.display = 'none';
 			}
-			
+
 			// Show job details
 			if (jobTabBtn && jobTabContent) {
 				jobTabBtn.classList.add('active');

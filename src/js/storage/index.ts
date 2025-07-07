@@ -1,7 +1,12 @@
 /**
  * Storage Service
- * Handles local storage for the extension
+ * Handles local storage for the extension with encryption for sensitive data
  */
+
+/**
+ * Internal dependencies
+ */
+import { EncryptionService } from '../utils/encryption';
 
 // Storage keys
 const STORAGE_KEY_API = 'openaiApiKey';
@@ -40,9 +45,11 @@ export interface ResumeData {
 	experience: Array<{
 		company: string;
 		position: string;
-		duration: string;
+		from: string;
+		to: string;
 		description?: string;
 		achievements?: string[];
+		technologies?: string[];
 	}>;
 	education: Array<{
 		institution: string;
@@ -76,28 +83,65 @@ export interface ResumeData {
  */
 class StorageService {
 	/**
-	 * Get the API key from storage
+	 * Get the API key from storage (decrypts if encrypted)
 	 * @returns {Promise<string|null>} The API key or null if not found
 	 */
-	getApiKey(): Promise<string | null> {
+	async getApiKey(): Promise<string | null> {
 		return new Promise((resolve) => {
-			chrome.storage.local.get([STORAGE_KEY_API], (result) => {
-				resolve(result[STORAGE_KEY_API] || null);
+			chrome.storage.local.get([STORAGE_KEY_API], async (result) => {
+				try {
+					const storedData = result[STORAGE_KEY_API];
+					if (!storedData) {
+						resolve(null);
+						return;
+					}
+
+					// Check if data is encrypted
+					if (EncryptionService.isEncrypted(storedData)) {
+						const decryptedKey =
+							await EncryptionService.decrypt(storedData);
+						resolve(decryptedKey);
+					} else {
+						// Legacy unencrypted data - migrate to encrypted
+						console.warn(
+							'Found unencrypted API key, migrating to encrypted storage'
+						);
+						await this.saveApiKey(storedData);
+						resolve(storedData);
+					}
+				} catch (error) {
+					console.error('Failed to decrypt API key:', error);
+					console.warn('Clearing corrupted API key data...');
+					// Clear corrupted data
+					chrome.storage.local.remove(STORAGE_KEY_API, () => {
+						console.log('Corrupted API key data cleared');
+					});
+					resolve(null);
+				}
 			});
 		});
 	}
 
 	/**
-	 * Save the API key to storage
+	 * Save the API key to storage (encrypted)
 	 * @param {string} apiKey - The API key to save
 	 * @returns {Promise<void>}
 	 */
-	saveApiKey(apiKey: string): Promise<void> {
-		return new Promise((resolve) => {
-			chrome.storage.local.set({ [STORAGE_KEY_API]: apiKey }, () => {
-				resolve();
+	async saveApiKey(apiKey: string): Promise<void> {
+		try {
+			const encryptedData = await EncryptionService.encrypt(apiKey);
+			return new Promise((resolve) => {
+				chrome.storage.local.set(
+					{ [STORAGE_KEY_API]: encryptedData },
+					() => {
+						resolve();
+					}
+				);
 			});
-		});
+		} catch (error) {
+			console.error('Failed to encrypt API key:', error);
+			throw new Error('Failed to save API key securely');
+		}
 	}
 
 	/**
@@ -175,31 +219,69 @@ class StorageService {
 	}
 
 	/**
-	 * Get the resume data from storage
+	 * Get the resume data from storage (decrypts if encrypted)
 	 * @returns {Promise<ResumeData|null>} The resume data or null if not found
 	 */
-	getResumeData(): Promise<ResumeData | null> {
+	async getResumeData(): Promise<ResumeData | null> {
 		return new Promise((resolve) => {
-			chrome.storage.local.get([STORAGE_KEY_RESUME], (result) => {
-				resolve(result[STORAGE_KEY_RESUME] || null);
+			chrome.storage.local.get([STORAGE_KEY_RESUME], async (result) => {
+				try {
+					const storedData = result[STORAGE_KEY_RESUME];
+					if (!storedData) {
+						resolve(null);
+						return;
+					}
+
+					// Check if data is encrypted
+					if (EncryptionService.isEncrypted(storedData)) {
+						const decryptedData =
+							await EncryptionService.decrypt(storedData);
+						const resumeData = JSON.parse(
+							decryptedData
+						) as ResumeData;
+						resolve(resumeData);
+					} else {
+						// Legacy unencrypted data - migrate to encrypted
+						console.warn(
+							'Found unencrypted resume data, migrating to encrypted storage'
+						);
+						await this.saveResumeData(storedData);
+						resolve(storedData);
+					}
+				} catch (error) {
+					console.error('Failed to decrypt resume data:', error);
+					console.warn('Clearing corrupted resume data...');
+					// Clear corrupted data
+					chrome.storage.local.remove(STORAGE_KEY_RESUME, () => {
+						console.log('Corrupted resume data cleared');
+					});
+					resolve(null);
+				}
 			});
 		});
 	}
 
 	/**
-	 * Save the resume data to storage
+	 * Save the resume data to storage (encrypted)
 	 * @param {ResumeData} resumeData - The resume data to save
 	 * @returns {Promise<void>}
 	 */
-	saveResumeData(resumeData: ResumeData): Promise<void> {
-		return new Promise((resolve) => {
-			chrome.storage.local.set(
-				{ [STORAGE_KEY_RESUME]: resumeData },
-				() => {
-					resolve();
-				}
-			);
-		});
+	async saveResumeData(resumeData: ResumeData): Promise<void> {
+		try {
+			const dataString = JSON.stringify(resumeData);
+			const encryptedData = await EncryptionService.encrypt(dataString);
+			return new Promise((resolve) => {
+				chrome.storage.local.set(
+					{ [STORAGE_KEY_RESUME]: encryptedData },
+					() => {
+						resolve();
+					}
+				);
+			});
+		} catch (error) {
+			console.error('Failed to encrypt resume data:', error);
+			throw new Error('Failed to save resume data securely');
+		}
 	}
 
 	/**

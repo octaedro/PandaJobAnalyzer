@@ -134,7 +134,7 @@ export class PandaJobAnalyzerApp {
 	async handleParseJob(forceRefresh = false): Promise<void> {
 		// Clear any previous messages
 		hideMessage(this.elements);
-		
+
 		const apiKey = await apiKeyManager.getApiKey();
 
 		if (!apiKey) {

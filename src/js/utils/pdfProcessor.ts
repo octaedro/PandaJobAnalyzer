@@ -452,10 +452,10 @@ export class PDFProcessor {
 				// Remove HTML tags
 				sanitized = sanitized.replace(/<[^>]*>/g, '');
 
-				// Decode HTML entities
+				// Decode HTML entities safely
 				const textarea = document.createElement('textarea');
-				textarea.innerHTML = sanitized;
-				sanitized = textarea.value;
+				textarea.textContent = sanitized;
+				sanitized = textarea.textContent || '';
 
 				// Limit string length for security
 				const MAX_STRING_LENGTH = 1000;

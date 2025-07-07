@@ -22,9 +22,50 @@
     "scripting"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://www.linkedin.com/*",
+    "https://linkedin.com/*",
+    "https://www.indeed.com/*",
+    "https://indeed.com/*",
+    "https://www.glassdoor.com/*",
+    "https://glassdoor.com/*",
+    "https://jobs.google.com/*",
+    "https://www.ziprecruiter.com/*",
+    "https://ziprecruiter.com/*",
+    "https://www.monster.com/*",
+    "https://monster.com/*",
+    "https://www.careerbuilder.com/*",
+    "https://careerbuilder.com/*",
+    "https://angel.co/*",
+    "https://www.angel.co/*",
+    "https://stackoverflow.com/jobs/*",
+    "https://remote.co/*",
+    "https://www.remote.co/*",
+    "https://remoteok.io/*",
+    "https://www.remoteok.io/*",
+    "https://weworkremotely.com/*",
+    "https://www.weworkremotely.com/*",
+    "https://flexjobs.com/*",
+    "https://www.flexjobs.com/*",
+    "https://upwork.com/*",
+    "https://www.upwork.com/*",
+    "https://freelancer.com/*",
+    "https://www.freelancer.com/*",
+    "https://boards.greenhouse.io/*",
+    "https://jobs.lever.co/*",
+    "https://careers.workday.com/*",
+    "https://myworkdayjobs.com/*",
+    "https://recruiting.ultipro.com/*",
+    "https://jobs.smartrecruiters.com/*",
+    "https://apply.workable.com/*",
+    "https://jobs.jobvite.com/*",
+    "https://chj.tbe.taleo.net/*",
+    "https://recruiting.adp.com/*",
+    "https://sjobs.brassring.com/*",
+    "https://careers.hcmtalentx.com/*",
+    "https://*.icims.com/*",
+    "https://api.openai.com/*"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';"
   }
 } 
