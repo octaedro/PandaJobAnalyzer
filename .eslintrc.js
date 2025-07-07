@@ -19,11 +19,7 @@ module.exports = {
 		es2021: true,
 		webextensions: true, // Chrome extension APIs
 	},
-	plugins: [
-		'@typescript-eslint',
-		'jsdoc',
-		'prettier',
-	],
+	plugins: ['@typescript-eslint', 'jsdoc', 'prettier'],
 	rules: {
 		// Basic rules
 		'no-console': ['warn', { allow: ['warn', 'error'] }],
@@ -31,15 +27,15 @@ module.exports = {
 		'no-alert': 'warn',
 		'prefer-const': 'error',
 		'no-var': 'error',
-		
+
 		// Code quality
-		'eqeqeq': ['error', 'always'],
-		'curly': 'error',
+		eqeqeq: ['error', 'always'],
+		curly: 'error',
 		'no-eval': 'error',
 		'no-implied-eval': 'error',
 		'prefer-promise-reject-errors': 'error',
 		'require-await': 'error',
-		
+
 		// TypeScript specific
 		'@typescript-eslint/no-unused-vars': [
 			'error',
@@ -48,14 +44,14 @@ module.exports = {
 		'@typescript-eslint/no-explicit-any': 'error',
 		'@typescript-eslint/explicit-function-return-type': 'off',
 		'@typescript-eslint/explicit-module-boundary-types': 'off',
-		
+
 		// JSDoc rules
 		'jsdoc/require-param': 'error',
 		'jsdoc/require-param-type': 'error',
 		'jsdoc/require-param-description': 'warn',
 		'jsdoc/require-returns': 'error',
 		'jsdoc/require-returns-type': 'error',
-		
+
 		// Prettier formatting
 		'prettier/prettier': [
 			'error',
