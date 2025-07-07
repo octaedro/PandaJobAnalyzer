@@ -441,6 +441,17 @@ button:active {
   gap: 16px;
 }
 
+.resume-description {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+  margin: 0;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-left: 3px solid var(--primary-color);
+  border-radius: 4px;
+}
+
 .file-upload-container {
   display: flex;
   flex-direction: column;

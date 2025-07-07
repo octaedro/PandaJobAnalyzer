@@ -15,7 +15,7 @@ export interface PDFProcessingResult {
 }
 
 export class PDFProcessor {
-	private static readonly MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+	private static readonly MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 	private static readonly SUPPORTED_MIME_TYPES = ['application/pdf'];
 
 	/**
@@ -33,7 +33,7 @@ export class PDFProcessor {
 
 		// Check file size
 		if (file.size > this.MAX_FILE_SIZE) {
-			return { isValid: false, error: 'File size exceeds 10MB limit' };
+			return { isValid: false, error: 'File size exceeds 2MB limit' };
 		}
 
 		// Check if file is empty

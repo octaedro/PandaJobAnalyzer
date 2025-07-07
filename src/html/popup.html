@@ -37,14 +37,17 @@
 
         <div class="settings-tab-content" id="resumeTab">
           <div class="resume-section">
-            <label for="resumeFile">Upload Resume (PDF):</label>
+            <label for="resumeFile">Resume Analysis (PDF):</label>
+            <p class="resume-description">
+              Upload your resume to enable AI-powered job matching. Your resume will be parsed and analyzed to show how well it matches job requirements and provide personalized recommendations for improvement.
+            </p>
             <div class="file-upload-container">
               <input type="file" id="resumeFile" accept=".pdf" class="file-input">
               <div class="file-upload-display">
                 <div class="file-upload-zone" id="fileUploadZone">
                   <div class="file-upload-icon">📄</div>
                   <p>Click to select or drag & drop your resume (PDF)</p>
-                  <p class="file-size-limit">Max size: 10MB</p>
+                  <p class="file-size-limit">Max size: 2MB</p>
                 </div>
                 <div class="file-selected-info hidden" id="fileSelectedInfo">
                   <div class="file-info">
@@ -104,7 +107,7 @@
         <div class="tabs">
           <div class="tab-buttons">
             <button class="tab-btn active" data-tab="job">Job Details</button>
-            <button class="tab-btn" data-tab="company">Company Info</button>
+            <button class="tab-btn" data-tab="company">Info</button>
           </div>
           
           <div class="tab-content active" id="jobTab">
