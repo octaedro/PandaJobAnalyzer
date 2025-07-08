@@ -75,7 +75,7 @@ export class PDFProcessor {
 
 			try {
 				// Method 1: Try basic PDF text extraction
-				extractedText = await this.extractTextBasicMethod(arrayBuffer);
+				extractedText = this.extractTextBasicMethod(arrayBuffer);
 				console.log(
 					'✅ Basic extraction successful, text length:',
 					extractedText.length
@@ -86,7 +86,7 @@ export class PDFProcessor {
 				try {
 					// Method 2: Try binary pattern matching
 					extractedText =
-						await this.extractTextPatternMatching(arrayBuffer);
+						this.extractTextPatternMatching(arrayBuffer);
 					console.log(
 						'✅ Pattern matching successful, text length:',
 						extractedText.length
@@ -137,9 +137,9 @@ export class PDFProcessor {
 	 * Method 1: Basic PDF text extraction using simple binary analysis
 	 * @param arrayBuffer
 	 */
-	private static async extractTextBasicMethod(
+	private static extractTextBasicMethod(
 		arrayBuffer: ArrayBuffer
-	): Promise<string> {
+	): string {
 		const uint8Array = new Uint8Array(arrayBuffer);
 		const pdfText = new TextDecoder('utf-8').decode(uint8Array);
 
@@ -182,9 +182,9 @@ export class PDFProcessor {
 	 * Method 2: Pattern matching extraction for more complex PDFs
 	 * @param arrayBuffer
 	 */
-	private static async extractTextPatternMatching(
+	private static extractTextPatternMatching(
 		arrayBuffer: ArrayBuffer
-	): Promise<string> {
+	): string {
 		const uint8Array = new Uint8Array(arrayBuffer);
 		const pdfText = new TextDecoder('latin1').decode(uint8Array);
 
@@ -277,9 +277,9 @@ export class PDFProcessor {
 	 * Request manual text input when automatic extraction fails
 	 * @param file
 	 */
-	private static async requestManualTextInput(
+	private static requestManualTextInput(
 		file: File
-	): Promise<PDFProcessingResult> {
+	): PDFProcessingResult {
 		return {
 			success: false,
 			error: `Could not extract text from ${file.name}. Please try a different PDF file.`,

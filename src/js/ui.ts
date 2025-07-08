@@ -3,6 +3,8 @@
  * Handles DOM manipulation, UI state updates, and rendering.
  */
 
+import { debouncer, performanceMonitor } from './utils/PerformanceOptimizer';
+
 // Define the structure of the elements object
 export interface DOMElementCache {
 	settingsPanel: HTMLElement | null;
@@ -195,6 +197,7 @@ export function renderResults(
 	resultsData: unknown,
 	elements: DOMElementCache
 ): void {
+	const endTimer = performanceMonitor.time('ui-render-results');
 	if (typeof resultsData !== 'object' || resultsData === null) {
 		console.error('renderResults called with invalid data');
 		if (elements.jobLocationEl) {
@@ -342,6 +345,7 @@ export function renderResults(
 	}
 
 	showElement(elements.resultsSection);
+	endTimer();
 }
 
 /**
@@ -425,6 +429,31 @@ export function showMessage(
 	elements: DOMElementCache,
 	type: 'info' | 'error' | 'warning' | 'success' = 'info',
 	timeout: number = 0 // Changed default to 0 (permanent) for error messages
+): void {
+	// Debounce rapid message updates
+	const debouncedShow = debouncer.debounce(
+		() => {
+			_showMessageImmediate(message, elements, type, timeout);
+		},
+		100,
+		'show-message'
+	);
+
+	debouncedShow();
+}
+
+/**
+ * Internal function to show message immediately
+ * @param {string} message - The message to display
+ * @param {DOMElementCache} elements - DOM elements cache
+ * @param {'info' | 'error' | 'warning' | 'success'} type - Message type
+ * @param {number} timeout - Timeout in milliseconds (0 for no timeout)
+ */
+function _showMessageImmediate(
+	message: string,
+	elements: DOMElementCache,
+	type: 'info' | 'error' | 'warning' | 'success' = 'info',
+	timeout: number = 0
 ): void {
 	if (!elements.messageArea) {
 		// Fallback if message area not found, but still log to console

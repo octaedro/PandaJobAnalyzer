@@ -1,20 +1,30 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
 	preset: 'ts-jest',
-	testEnvironment: 'node', // Use 'jsdom' if testing DOM manipulation
-	roots: ['<rootDir>/test'], // Look for tests in the test directory
-	testMatch: [
-		'**/__tests__/**/*.+(ts|tsx|js)',
-		'**/?(*.)+(spec|test).+(ts|tsx|js)',
+	testEnvironment: 'jsdom',
+	roots: ['<rootDir>/src'],
+	testMatch: ['**/__tests__/**/*.test.ts'],
+	collectCoverageFrom: [
+		'src/**/*.ts',
+		'!src/**/*.d.ts',
+		'!src/**/__tests__/**',
+		'!src/content.ts' // Exclude content script from coverage as it's browser-specific
 	],
+	setupFilesAfterEnv: ['<rootDir>/src/js/__tests__/setup.ts'],
 	transform: {
-		'^.+\.(ts|tsx)$?': [
-			'ts-jest',
-			{
-				/* ts-jest config options here */
-			},
-		],
+		'^.+\\.ts$': 'ts-jest'
 	},
-	// If mocking chrome APIs becomes necessary:
-	// setupFilesAfterEnv: ['<rootDir>/jest.setup.js']
+	moduleFileExtensions: ['ts', 'js', 'json'],
+	verbose: true,
+	coverageReporters: ['text', 'lcov', 'html'],
+	coverageDirectory: 'coverage',
+	collectCoverage: true,
+	coverageThreshold: {
+		global: {
+			branches: 70,
+			functions: 70,
+			lines: 70,
+			statements: 70
+		}
+	}
 };

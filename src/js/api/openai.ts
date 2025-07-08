@@ -5,11 +5,11 @@
 
 const API_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 
-// Import resume data type
-/**
- * Internal dependencies
- */
+// Import dependencies
 import { ResumeData } from '../storage/index';
+import { cache, performanceMonitor } from '../utils/PerformanceOptimizer';
+import { ValidationService } from '../services/ValidationService';
+import { ErrorHandler, ErrorType } from '../services/ErrorHandler';
 
 // Define types for OpenAI configuration and API response
 interface OpenAIConfig {
@@ -67,10 +67,10 @@ class OpenAIService {
 
 	/**
 	 * Get default configuration for OpenAI
-	 * @param {any} resumeData - Optional resume data for matching analysis
+	 * @param {ResumeData | null} resumeData - Resume data for matching analysis
 	 * @returns {OpenAIConfig} Default configuration
 	 */
-	getDefaultConfig(resumeData?: any): OpenAIConfig {
+	getDefaultConfig(resumeData: ResumeData | null = null): OpenAIConfig {
 		const baseFields =
 			'- jobLocation (array of countries or regions)\n' +
 			'- requiredSkills (array of strings)\n' +
@@ -105,86 +105,92 @@ class OpenAIService {
 	 * Analyze job listing using OpenAI API
 	 * @param {string} content - Job listing content
 	 * @param {string} apiKey - OpenAI API key
-	 * @param {any} resumeData - Optional resume data for matching analysis
+	 * @param {ResumeData | null} resumeData - Optional resume data for matching analysis
 	 * @returns {Promise<AnalysisResult>} Analysis results
 	 */
 	async analyzeJobListing(
 		content: string,
 		apiKey: string,
-		resumeData?: any
+		resumeData?: ResumeData | null
 	): Promise<AnalysisResult> {
+		const endTimer = performanceMonitor.time('openai-analysis');
 		const analysisId = Math.random().toString(36).substr(2, 9);
-		console.log(`🎯 [${analysisId}] analyzeJobListing called with:`);
-		console.log(
-			`📄 [${analysisId}] Content length: ${content.length} characters`
-		);
-		console.log(`👤 [${analysisId}] Has resume data: ${!!resumeData}`);
-		if (resumeData) {
+
+		try {
+			// Validate inputs
+			const apiKeyValidation = ValidationService.validateApiKey(apiKey);
+			if (!apiKeyValidation.isValid) {
+				throw ErrorHandler.handleValidationError(
+					apiKeyValidation.errors
+				);
+			}
+
+			const contentValidation =
+				ValidationService.validateAndSanitizeText(content);
+			if (!contentValidation.isValid) {
+				throw ErrorHandler.handleValidationError(
+					contentValidation.errors
+				);
+			}
+
+			console.log(`🎯 [${analysisId}] analyzeJobListing called with:`);
 			console.log(
-				`📄 [${analysisId}] Resume data size: ${JSON.stringify(resumeData).length} characters`
+				`📄 [${analysisId}] Content length: ${content.length} characters`
 			);
+			console.log(`👤 [${analysisId}] Has resume data: ${!!resumeData}`);
+
+			// Check cache first
+			const cacheKey = this.generateCacheKey(content, resumeData);
+			const cachedResult = cache.get(cacheKey) as AnalysisResult | null;
+			if (cachedResult) {
+				console.log(`💾 [${analysisId}] Using cached result`);
+				return cachedResult;
+			}
+
+			if (resumeData) {
+				console.log(
+					`📄 [${analysisId}] Resume data size: ${JSON.stringify(resumeData).length} characters`
+				);
+			}
+
+			// Use single-call approach with optimized prompt
+			console.log(
+				`✅ [${analysisId}] Using single-call approach with optimized prompts`
+			);
+
+			if (!this.config) {
+				this.config = this.getDefaultConfig(resumeData);
+			}
+
+			console.log(`🔄 [${analysisId}] Calling makeApiRequest...`);
+			const result = await this.makeApiRequest(
+				content,
+				apiKey,
+				resumeData
+			);
+			console.log(
+				`✅ [${analysisId}] makeApiRequest completed successfully`
+			);
+
+			// Cache the result for 1 hour
+			cache.set(cacheKey, result, 60 * 60 * 1000);
+
+			return result;
+		} catch (error) {
+			if (error instanceof Error && 'type' in error) {
+				throw error; // Already handled by ErrorHandler
+			}
+			throw ErrorHandler.createError(
+				ErrorType.API,
+				error instanceof Error ? error.message : 'Unknown error',
+				error instanceof Error ? error : undefined,
+				{ analysisId, contentLength: content.length }
+			);
+		} finally {
+			endTimer();
 		}
-
-		// Use single-call approach with optimized prompt
-		console.log(
-			`✅ [${analysisId}] Using single-call approach with optimized prompts`
-		);
-
-		if (!this.config) {
-			this.config = this.getDefaultConfig(resumeData);
-		}
-
-		console.log(`🔄 [${analysisId}] Calling makeApiRequest...`);
-		const result = await this.makeApiRequest(content, apiKey, resumeData);
-		console.log(`✅ [${analysisId}] makeApiRequest completed successfully`);
-
-		return result;
 	}
 
-	/**
-	 * Step 1: Summarize job posting into structured data
-	 * @param {string} content - Job listing content
-	 * @param {string} apiKey - OpenAI API key
-	 * @returns {Promise<AnalysisResult>} Job summary
-	 */
-	private async summarizeJobPosting(
-		content: string,
-		apiKey: string
-	): Promise<AnalysisResult> {
-		console.log('Step 1: Summarizing job posting...');
-
-		const systemPrompt =
-			'You are a helpful assistant that analyzes job listings and extracts key information. Return a JSON object with the following fields:\n' +
-			'- jobLocation (array of countries or regions)\n' +
-			'- requiredSkills (array of strings)\n' +
-			'- niceToHaveSkills (array of strings)\n' +
-			'- companySummary (string)\n' +
-			'- companyReviews (string or null)\n' +
-			'- salaryRange (object with min and max properties as strings, example: {"min": "$50,000", "max": "$70,000"}, or null if not found)\n' +
-			'\nIMPORTANT: Ensure all values are simple strings or arrays of strings. For salaryRange, min and max must be text strings, not objects.';
-
-		const userPrompt = `Analyze this job listing and extract key information: ${content}`;
-
-		const prompt: OpenAIRequest = {
-			model: 'gpt-4o-mini',
-			messages: [
-				{
-					role: 'system',
-					content: systemPrompt,
-				},
-				{
-					role: 'user',
-					content: userPrompt,
-				},
-			],
-		};
-
-		console.log(
-			`Job summary request size: ~${JSON.stringify(prompt).length} characters`
-		);
-
-		return this.makeRequestWithRetry(prompt, apiKey, 'job summary');
-	}
 
 	/**
 	 * Make API request with retry logic for rate limiting
@@ -319,48 +325,6 @@ class OpenAIService {
 		}
 	}
 
-	/**
-	 * Step 2: Match resume with job summary
-	 * @param {any} resumeData - Resume data
-	 * @param {AnalysisResult} jobSummary - Job summary from step 1
-	 * @param {string} apiKey - OpenAI API key
-	 * @returns {Promise<{match: number, missing: string[]}>} Match results
-	 */
-	private async matchResumeWithJob(
-		resumeData: any,
-		jobSummary: AnalysisResult,
-		apiKey: string
-	): Promise<{ match: number; missing: string[] }> {
-		console.log('Step 2: Matching resume with job summary...');
-
-		const systemPrompt =
-			'You are a helpful assistant that analyzes how well a candidate matches a job posting. Return a JSON object with the following fields:\n' +
-			'- match (integer from 1 to 100 representing how well the candidate matches the job)\n' +
-			'- missing (array of specific things the candidate needs to achieve 100% match, e.g., ["Experience with AWS EC2", "React certification", "5+ years in leadership"])\n' +
-			"\nAnalyze the candidate's resume against the job requirements and provide an accurate match percentage and specific missing requirements.";
-
-		const userPrompt = `Analyze how well this candidate matches the job based on their resume data and the job summary.\n\nJob Summary: ${JSON.stringify(jobSummary)}\n\nCandidate Resume: ${JSON.stringify(resumeData)}`;
-
-		const prompt: OpenAIRequest = {
-			model: 'gpt-4o-mini',
-			messages: [
-				{
-					role: 'system',
-					content: systemPrompt,
-				},
-				{
-					role: 'user',
-					content: userPrompt,
-				},
-			],
-		};
-
-		console.log(
-			`Match request size: ~${JSON.stringify(prompt).length} characters`
-		);
-
-		return this.makeRequestWithRetry(prompt, apiKey, 'resume matching');
-	}
 
 	/**
 	 * Parse resume using OpenAI API with extracted text content
@@ -636,13 +600,13 @@ Return ONLY the JSON, no additional text or explanations.`;
 	 * Make API request to OpenAI
 	 * @param {string} content - Content to analyze
 	 * @param {string} apiKey - OpenAI API key
-	 * @param {any} resumeData - Optional resume data for matching analysis
+	 * @param {ResumeData | null} resumeData - Optional resume data for matching analysis
 	 * @returns {Promise<AnalysisResult>} Analysis results
 	 */
 	private async makeApiRequest(
 		content: string,
 		apiKey: string,
-		resumeData?: any
+		resumeData?: ResumeData | null
 	): Promise<AnalysisResult> {
 		if (!this.config) {
 			throw new Error('Configuration not set');
@@ -673,7 +637,7 @@ Return ONLY the JSON, no additional text or explanations.`;
 				userPrompt =
 					'Analyze this job listing and extract key information: ' +
 					content;
-				this.config = this.getDefaultConfig(); // Reset config to non-matching version
+				this.config = this.getDefaultConfig(null); // Reset config to non-matching version
 			}
 		}
 
@@ -696,6 +660,33 @@ Return ONLY the JSON, no additional text or explanations.`;
 		);
 
 		return this.makeRequestWithRetry(prompt, apiKey, 'job analysis');
+	}
+
+	/**
+	 * Generate cache key for API requests
+	 * @param content
+	 * @param resumeData
+	 */
+	private generateCacheKey(content: string, resumeData?: ResumeData | null): string {
+		const contentHash = this.hashString(content.substring(0, 1000)); // Use first 1000 chars
+		const resumeHash = resumeData
+			? this.hashString(JSON.stringify(resumeData).substring(0, 500))
+			: 'no-resume';
+		return `openai-${contentHash}-${resumeHash}`;
+	}
+
+	/**
+	 * Simple hash function for cache keys
+	 * @param str
+	 */
+	private hashString(str: string): string {
+		let hash = 0;
+		for (let i = 0; i < str.length; i++) {
+			const char = str.charCodeAt(i);
+			hash = (hash << 5) - hash + char;
+			hash = hash & hash; // Convert to 32-bit integer
+		}
+		return Math.abs(hash).toString(36);
 	}
 }
 
