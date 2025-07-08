@@ -346,6 +346,10 @@ export function renderResults(
 	}
 
 	showElement(elements.resultsSection);
+	
+	// Adjust popup height after rendering results
+	setTimeout(() => adjustPopupHeight(), 100);
+	
 	endTimer();
 }
 
@@ -407,6 +411,9 @@ export function handleTabClick(
 			contentPane.style.display = 'none';
 		}
 	});
+
+	// Adjust popup height after tab change
+	setTimeout(() => adjustPopupHeight(), 100);
 }
 
 /**
@@ -649,6 +656,9 @@ export function toggleRankingTab(
 			rankingContent.classList.remove('hidden');
 			rankingContent.style.display = 'block';
 		}
+
+		// Adjust popup height after tab change
+		setTimeout(() => adjustPopupHeight(), 100);
 	} else {
 		// Hide ranking tab
 		elements.rankingTabBtn.classList.add('hidden');
@@ -676,6 +686,36 @@ export function toggleRankingTab(
 				jobTabContent.style.display = 'block';
 			}
 		}
+	}
+}
+
+/**
+ * Adjusts the popup height based on content size
+ */
+export function adjustPopupHeight(): void {
+	// Get the body element
+	const body = document.body;
+	
+	// Calculate the content height
+	const contentHeight = body.scrollHeight;
+	
+	// Set limits as specified
+	const minHeight = 200;
+	const maxHeight = 1500;
+	
+	// Calculate the optimal height
+	let optimalHeight = Math.max(minHeight, Math.min(contentHeight, maxHeight));
+	
+	// Add some padding for better appearance
+	optimalHeight += 20;
+	
+	// Apply the height
+	body.style.height = `${optimalHeight}px`;
+	
+	// Update the header width to match body width
+	const header = document.querySelector('header') as HTMLElement;
+	if (header) {
+		header.style.width = '420px';
 	}
 }
 

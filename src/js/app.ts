@@ -17,6 +17,7 @@ import {
 	hideElement, // Keep needed visibility helpers
 	showMessage as showUIMessage, // Keep show message
 	hideMessage, // Add hide message
+	adjustPopupHeight,
 } from './ui';
 import * as apiKeyManager from './apiKeyManager';
 import * as resumeManager from './resumeManager';
@@ -42,6 +43,9 @@ export class PandaJobAnalyzerApp {
 
 			// Initialize resume status regardless of API key
 			await resumeManager.initializeResumeStatus(this.elements);
+
+			// Adjust initial popup height
+			setTimeout(() => adjustPopupHeight(), 100);
 
 			if (hasApiKey) {
 				try {
