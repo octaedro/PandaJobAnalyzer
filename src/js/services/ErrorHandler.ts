@@ -14,6 +14,7 @@ export enum ErrorType {
 }
 
 export interface AppError {
+	id: string;
 	type: ErrorType;
 	message: string;
 	originalError?: Error;
@@ -40,6 +41,7 @@ export class ErrorHandler {
 		context?: Record<string, any>
 	): AppError {
 		const error: AppError = {
+			id: Math.random().toString(36).substr(2, 9),
 			type,
 			message,
 			originalError,
@@ -277,15 +279,62 @@ export class ErrorHandler {
 	}
 
 	/**
-	 * Log error to console
+	 * Log error to console with security filtering
 	 * @param error
 	 */
 	private static logError(error: AppError): void {
-		console.error(`[${error.type}] ${error.message}`, {
-			timestamp: error.timestamp,
-			context: error.context,
-			originalError: error.originalError,
-		});
+		// Filter sensitive information from context
+		const safeContext = this.filterSensitiveInfo(error.context);
+		
+		// Only log essential information in production
+		const isDevelopment = process.env.NODE_ENV === 'development';
+		
+		if (isDevelopment) {
+			console.error(`[${error.type}] ${error.message}`, {
+				timestamp: error.timestamp,
+				context: safeContext,
+				originalError: error.originalError,
+			});
+		} else {
+			// In production, log minimal information
+			console.error(`[${error.type}] ${error.message}`, {
+				timestamp: error.timestamp,
+				errorId: error.id,
+			});
+		}
+	}
+
+	/**
+	 * Filter sensitive information from error context
+	 * @param context
+	 */
+	private static filterSensitiveInfo(context: any): any {
+		if (!context || typeof context !== 'object') {
+			return context;
+		}
+
+		const filtered = { ...context };
+		
+		// Remove sensitive keys
+		const sensitiveKeys = [
+			'apiKey', 'password', 'token', 'secret', 'key',
+			'authorization', 'auth', 'credential', 'session'
+		];
+		
+		for (const key in filtered) {
+			if (sensitiveKeys.some(sensitive => 
+				key.toLowerCase().includes(sensitive.toLowerCase())
+			)) {
+				filtered[key] = '[REDACTED]';
+			}
+			
+			// Recursively filter nested objects
+			if (typeof filtered[key] === 'object' && filtered[key] !== null) {
+				filtered[key] = this.filterSensitiveInfo(filtered[key]);
+			}
+		}
+
+		return filtered;
 	}
 
 	/**

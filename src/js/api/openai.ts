@@ -231,11 +231,20 @@ class OpenAIService {
 					`🌐 [${callId}] Making fetch request at ${requestTimestamp}`
 				);
 
+				// Validate API key format for additional security
+				if (!apiKey.startsWith('sk-') || apiKey.length < 20) {
+					throw new Error('Invalid API key format');
+				}
+
 				const response = await fetch(API_ENDPOINT, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: `Bearer ${apiKey}`,
+						'Authorization': `Bearer ${apiKey}`,
+						'User-Agent': 'PandaJobAnalyzer/1.0.0',
+						'X-Request-ID': callId,
+						'X-Requested-With': 'XMLHttpRequest',
+						'Origin': chrome.runtime.getURL(''),
 					},
 					body: JSON.stringify(prompt),
 				});
@@ -245,14 +254,37 @@ class OpenAIService {
 				);
 
 				if (response.ok) {
+					// Validate response headers for security
+					const contentType = response.headers.get('content-type');
+					if (!contentType || !contentType.includes('application/json')) {
+						throw new Error('Invalid response content type');
+					}
+
 					const data = (await response.json()) as OpenAIResponse;
+					
+					// Validate response structure
+					if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+						throw new Error('Invalid response structure');
+					}
+
 					const messageContent = data.choices[0].message.content;
+					if (!messageContent || typeof messageContent !== 'string') {
+						throw new Error('Invalid message content');
+					}
+
 					const jsonMatch = messageContent.match(/\{[\s\S]*\}/);
 					if (jsonMatch) {
 						console.log(
 							`✅ [${callId}] ${requestType} - Success on attempt ${attempt}`
 						);
-						return JSON.parse(jsonMatch[0]);
+						
+						// Validate JSON before parsing
+						const jsonString = jsonMatch[0];
+						if (jsonString.length > 100000) { // 100KB limit
+							throw new Error('Response JSON too large');
+						}
+						
+						return JSON.parse(jsonString);
 					} else {
 						throw new Error(
 							`Failed to extract JSON from ${requestType} response`

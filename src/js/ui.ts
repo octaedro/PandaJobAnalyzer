@@ -4,6 +4,7 @@
  */
 
 import { debouncer, performanceMonitor } from './utils/PerformanceOptimizer';
+import { ValidationService } from './services/ValidationService';
 
 // Define the structure of the elements object
 export interface DOMElementCache {
@@ -470,13 +471,17 @@ function _showMessageImmediate(
 
 	const msgArea = elements.messageArea;
 
+	// Sanitize message content to prevent XSS
+	const sanitizedMessage = ValidationService.sanitizeHtml(message);
+	
 	// Safely handle multiline messages without innerHTML
 	msgArea.textContent = ''; // Clear existing content
-	const lines = message.split('\n');
+	const lines = sanitizedMessage.split('\n');
 	lines.forEach((line, index) => {
 		if (index > 0) {
 			msgArea.appendChild(document.createElement('br'));
 		}
+		// Use textContent for additional safety
 		const textNode = document.createTextNode(line);
 		msgArea.appendChild(textNode);
 	});
