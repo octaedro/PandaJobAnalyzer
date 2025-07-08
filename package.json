@@ -6,6 +6,7 @@
   "scripts": {
     "test": "jest",
     "build": "webpack --config webpack.config.js",
+    "build:production": "webpack --config webpack.config.production.js && rm -f dist/*.map && zip -r jobScope-extension.zip dist/",
     "watch": "webpack --watch --config webpack.config.js",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --fix"
   },
