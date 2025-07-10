@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "PandaJobAnalyzer",
+  "name": "Panda Job Analyzer",
   "version": "1.0.0",
   "description": "Analyze job listings using AI to extract key information",
   "action": {
