@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Panda Job Analyzer",
   "version": "1.0.0",
-  "description": "Analyze job listings using AI to extract key information",
+  "description": "AI-powered tool that analyzes job postings to extract key information, requirements, and insights from various job boards",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
