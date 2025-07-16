@@ -15,6 +15,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 			// Common job listing selectors for various job sites
 			// Prioritize more specific IDs/classes, then common structural tags
 			const jobSelectors = [
+				// Ashby
+				'div[class*="_content_"]',
 				// Indeed
 				'#jobDescriptionText',
 				'.jobsearch-jobDescriptionText',
