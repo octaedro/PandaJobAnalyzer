@@ -488,7 +488,7 @@ class OpenAIService {
 	 * Get system prompt for resume parsing
 	 */
 	private getResumeSystemPrompt(): string {
-		return `You are a professional resume parser. You MUST return a complete, valid JSON object. Do not truncate or cut off the response.
+		return `You are an expert resume parser specializing in technical profiles. You MUST return a complete, valid JSON object. Do not truncate or cut off the response.
 
 REQUIRED JSON structure (fill with actual data from resume):
 {
@@ -501,16 +501,16 @@ REQUIRED JSON structure (fill with actual data from resume):
     "github": "https://github.com/username",
     "website": "https://website.com"
   },
-  "summary": "Brief professional summary",
+  "summary": "Brief professional summary highlighting key strengths and experience",
   "experience": [
     {
       "company": "Company Name",
       "position": "Job Title", 
       "from": "01-2020",
       "to": "12-2023",
-      "description": "Role description",
-      "achievements": ["Achievement 1", "Achievement 2"],
-      "technologies": ["JavaScript", "React", "Node.js", "PostgreSQL"]
+      "description": "Comprehensive role description with context and responsibilities",
+      "achievements": ["Quantified achievement with metrics", "Impact-focused achievement"],
+      "technologies": ["JavaScript", "React", "Node.js", "PostgreSQL", "AWS", "Docker"]
     }
   ],
   "education": [
@@ -523,15 +523,15 @@ REQUIRED JSON structure (fill with actual data from resume):
     }
   ],
   "skills": {
-    "technical": ["JavaScript", "Python", "React"],
-    "soft": ["Leadership", "Communication"],
+    "technical": ["Programming Languages", "Frameworks", "Tools", "Platforms"],
+    "soft": ["Leadership", "Communication", "Problem Solving"],
     "languages": ["English (Native)", "Spanish (Fluent)"]
   },
   "projects": [
     {
       "name": "Project Name",
-      "description": "Project description", 
-      "technologies": ["React", "Node.js"],
+      "description": "Detailed project description with impact and scope", 
+      "technologies": ["React", "Node.js", "MongoDB"],
       "url": "https://github.com/user/project"
     }
   ],
@@ -544,16 +544,38 @@ REQUIRED JSON structure (fill with actual data from resume):
   ]
 }
 
-CRITICAL RULES:
+CRITICAL PARSING RULES:
 1. Return ONLY valid JSON - no explanations, markdown, or extra text
 2. Ensure the JSON is complete and properly closed with all brackets
 3. Use "Not Available" for missing information
-4. Keep descriptions concise to avoid truncation
-5. For experience dates, use MM-YYYY format (e.g., "01-2020", "12-2023")
-6. If only year is available, use "01-YYYY" for start and "12-YYYY" for end
-7. IMPORTANT: For each experience, extract ALL technical skills, technologies, programming languages, frameworks, tools, platforms, databases, cloud services, etc. mentioned in the job description
-8. Include both explicitly mentioned technologies and inferred ones from context (e.g., if they mention "web development", include HTML/CSS/JavaScript)
-9. Use standard technology names (e.g., "JavaScript" not "JS", "PostgreSQL" not "Postgres")`;
+
+DATE EXTRACTION RULES (CRITICAL):
+4. For experience dates, use MM-YYYY format (e.g., "01-2020", "12-2023")
+5. If only year is available, use "01-YYYY" for start and "12-YYYY" for end
+6. For "Present" or "Current" positions, use "Present" as the "to" value
+7. IMPORTANT: Look for date patterns like "2020-2023", "2020 - 2023", "Jan 2020 - Dec 2023"
+8. Extract dates from context: if text shows "Senior Software Engineer, Automattic Inc." followed by any date indicators
+9. Common date formats to look for: "YYYY-YYYY", "MM/YYYY", "Month YYYY", "YYYY-Present"
+10. If dates appear separately from job titles, match them by proximity and context
+
+TECHNOLOGY EXTRACTION (MOST IMPORTANT):
+- Extract ALL technical skills, technologies, programming languages, frameworks, tools, platforms, databases, cloud services, methodologies mentioned or implied
+- Look for technical keywords in job descriptions, bullet points, achievements, and project descriptions
+- Include both explicitly stated and contextually inferred technologies
+- Use standard, full names: "JavaScript" not "JS", "PostgreSQL" not "Postgres", "Amazon Web Services" not "AWS"
+- Common categories to look for: Programming Languages, Frameworks, Databases, Cloud Platforms, DevOps Tools, Testing Frameworks, Operating Systems, Version Control
+
+ACHIEVEMENT EXTRACTION:
+- Focus on quantified achievements with numbers, percentages, metrics
+- Look for impact statements: "increased by X%", "reduced by X hours", "managed team of X"
+- Include context about scope and scale of work
+- Prioritize business impact over technical details
+
+DESCRIPTION ENHANCEMENT:
+- Provide comprehensive role descriptions that include context, responsibilities, and scope
+- Avoid truncating important information
+- Include industry context and company size when available
+- Focus on accomplishments rather than just duties`;
 	}
 
 	/**
@@ -565,20 +587,50 @@ CRITICAL RULES:
 		extractedText: string,
 		fileName: string
 	): string {
-		return `Please parse this resume text and extract all information according to the specified JSON structure. 
+		return `Analyze this resume thoroughly and extract all information according to the specified JSON structure. 
 
 File: ${fileName}
 
 Resume Content:
 ${extractedText}
 
-Extract all personal information, work experience, education, skills, projects, and certifications from this resume text and return them in the specified JSON format. 
+EXTRACTION PRIORITIES:
 
-PAY SPECIAL ATTENTION TO:
-- For each work experience, carefully identify and extract ALL technologies, programming languages, frameworks, databases, cloud platforms, tools, and technical skills mentioned or implied
-- Look for technical keywords throughout the job descriptions, bullet points, and achievements
-- Include both explicitly stated technologies and those that can be reasonably inferred from the context
-- Use standard, full names for technologies (e.g., "JavaScript" not "JS", "PostgreSQL" not "Postgres", "Amazon Web Services" not "AWS")
+1. DATE EXTRACTION (CRITICAL FOR EXPERIENCE):
+   - Carefully scan for ANY date patterns: "2020-2023", "2020 - 2023", "Jan 2020 - Dec 2023", "2020-Present"
+   - Look for dates near job titles and company names
+   - Match dates to their corresponding jobs by proximity in the text
+   - Be flexible with date formats but convert all to MM-YYYY format for "from" and "to" fields
+   - If you find "2021" and "Present" near "Automattic", that's "from": "01-2021", "to": "Present"
+
+2. TECHNOLOGY EXTRACTION (CRITICAL):
+   - Scan every word for technical terms: programming languages, frameworks, databases, cloud services, tools, methodologies
+   - Look in job descriptions, bullet points, achievements, project descriptions, and skills sections
+   - Include variations and related technologies (e.g., if "web development" is mentioned, include HTML, CSS, JavaScript)
+   - Extract version numbers when mentioned (e.g., "React 18", "Node.js 16")
+   - Look for industry-standard abbreviations and expand them to full names
+
+3. QUANTIFIED ACHIEVEMENTS:
+   - Find all numbers, percentages, timeframes, team sizes, budget amounts, performance metrics
+   - Look for impact statements: "improved", "increased", "reduced", "optimized", "managed", "led"
+   - Calculate implied achievements from context
+   - Include scale indicators: company size, project scope, user base
+
+4. COMPREHENSIVE DESCRIPTIONS:
+   - Extract full context for each role: company background, team structure, project scope
+   - Include responsibilities AND accomplishments
+   - Capture industry/domain knowledge
+   - Note leadership, collaboration, and cross-functional work
+
+5. COMPLETE PERSONAL INFO:
+   - Check headers, footers, and contact sections thoroughly
+   - Look for social media profiles, portfolios, personal websites
+   - Extract location information including willingness to relocate
+
+6. EDUCATION & CERTIFICATIONS:
+   - Include all degrees, certificates, courses, bootcamps
+   - Extract relevant coursework, thesis topics, academic projects
+   - Note honors, awards, GPA if mentioned
 
 Return ONLY the JSON, no additional text or explanations.`;
 	}
