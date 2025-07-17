@@ -127,6 +127,8 @@ export function cacheDOMElements(): DOMElementCache {
  */
 export function showElement(element: HTMLElement | null): void {
 	element?.classList.remove('hidden');
+	// Adjust popup height after showing content
+	adjustPopupHeight().catch(console.error);
 }
 
 /**
@@ -135,6 +137,8 @@ export function showElement(element: HTMLElement | null): void {
  */
 export function hideElement(element: HTMLElement | null): void {
 	element?.classList.add('hidden');
+	// Adjust popup height after hiding content
+	adjustPopupHeight().catch(console.error);
 }
 
 /**
@@ -348,7 +352,7 @@ export function renderResults(
 	showElement(elements.resultsSection);
 
 	// Adjust popup height after rendering results
-	setTimeout(() => adjustPopupHeight(), 100);
+	adjustPopupHeight().catch(console.error);
 
 	endTimer();
 }
@@ -413,7 +417,7 @@ export function handleTabClick(
 	});
 
 	// Adjust popup height after tab change
-	setTimeout(() => adjustPopupHeight(), 100);
+	adjustPopupHeight().catch(console.error);
 }
 
 /**
@@ -658,7 +662,7 @@ export function toggleRankingTab(
 		}
 
 		// Adjust popup height after tab change
-		setTimeout(() => adjustPopupHeight(), 100);
+		adjustPopupHeight().catch(console.error);
 	} else {
 		// Hide ranking tab
 		elements.rankingTabBtn.classList.add('hidden');
@@ -689,34 +693,77 @@ export function toggleRankingTab(
 	}
 }
 
+// Global variable to store the current adjustment promise
+let adjustmentPromise: Promise<void> | null = null;
+
 /**
  * Adjusts the popup height based on content size
+ * Uses requestAnimationFrame for optimal timing and prevents multiple simultaneous calls
+ * @returns {Promise<void>} Promise that resolves when height adjustment is complete
  */
-export function adjustPopupHeight(): void {
-	// Get the body element
-	const body = document.body;
-
-	// Calculate the content height
-	const contentHeight = body.scrollHeight;
-
-	// Set limits as specified
-	const minHeight = 200;
-	const maxHeight = 1500;
-
-	// Calculate the optimal height
-	let optimalHeight = Math.max(minHeight, Math.min(contentHeight, maxHeight));
-
-	// Add some padding for better appearance
-	optimalHeight += 20;
-
-	// Apply the height
-	body.style.height = `${optimalHeight}px`;
-
-	// Update the header width to match body width
-	const header = document.querySelector('header') as HTMLElement;
-	if (header) {
-		header.style.width = '420px';
+export function adjustPopupHeight(): Promise<void> {
+	// If there's already an adjustment in progress, return the existing promise
+	if (adjustmentPromise) {
+		return adjustmentPromise;
 	}
+
+	// Create a new promise for this adjustment
+	adjustmentPromise = new Promise<void>((resolve) => {
+		requestAnimationFrame(() => {
+			try {
+				// Get the body element
+				const body = document.body;
+
+				// Force a layout recalculation by temporarily setting height to auto
+				body.style.height = 'auto';
+				
+				// Force a reflow to ensure accurate measurements
+				body.offsetHeight;
+
+				// Calculate the content height
+				const contentHeight = body.scrollHeight;
+
+				// Set limits to match CSS values
+				const minHeight = 200;
+				const maxHeight = 600;
+
+				// Calculate the optimal height
+				let optimalHeight = Math.max(minHeight, Math.min(contentHeight, maxHeight));
+
+				// Add some padding for better appearance
+				optimalHeight += 10;
+
+				// Apply the height and remove overflow when content fits
+				body.style.height = `${optimalHeight}px`;
+				
+				// Manage overflow based on content
+				if (contentHeight + 10 <= maxHeight) {
+					body.style.overflowY = 'hidden';
+				} else {
+					body.style.overflowY = 'auto';
+				}
+
+				// Update the header width to match body width
+				const header = document.querySelector('header') as HTMLElement;
+				if (header) {
+					header.style.width = '420px';
+				}
+
+				// Clear the promise reference
+				adjustmentPromise = null;
+				
+				// Resolve the promise
+				resolve();
+			} catch (error) {
+				// Clear the promise reference on error
+				adjustmentPromise = null;
+				console.error('Error adjusting popup height:', error);
+				resolve(); // Resolve anyway to prevent hanging promises
+			}
+		});
+	});
+
+	return adjustmentPromise;
 }
 
 export {};

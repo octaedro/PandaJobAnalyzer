@@ -23,12 +23,14 @@
 body {
   width: 420px;
   min-height: 200px;
-  max-height: 1500px;
+  max-height: 600px;
   background-color: var(--background-color);
   color: var(--text-color);
   font-size: 14px;
   line-height: 1.5;
-  overflow-y: auto;
+  overflow-y: hidden; /* Will be managed by JavaScript */
+  height: auto;
+  transition: height 0.2s ease-in-out;
 }
 
 .container {

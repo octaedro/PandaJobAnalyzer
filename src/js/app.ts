@@ -45,7 +45,7 @@ export class PandaJobAnalyzerApp {
 			await resumeManager.initializeResumeStatus(this.elements);
 
 			// Adjust initial popup height
-			setTimeout(() => adjustPopupHeight(), 100);
+			adjustPopupHeight().catch(console.error);
 
 			if (hasApiKey) {
 				try {

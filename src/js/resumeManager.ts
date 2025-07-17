@@ -7,7 +7,7 @@
  * Internal dependencies
  */
 import storageService, { ResumeData } from './storage/index';
-import { showMessage, type DOMElementCache } from './ui';
+import { showMessage, adjustPopupHeight, type DOMElementCache } from './ui';
 import { PDFProcessor } from './utils/pdfProcessor';
 import openaiService from './api/openai';
 
@@ -184,6 +184,9 @@ function updateResumeDisplay(
 		// Also hide JSON viewer if it's open
 		hideResumeJson(elements);
 	}
+	
+	// Adjust popup height after content changes
+	adjustPopupHeight().catch(console.error);
 }
 
 /**
@@ -268,6 +271,9 @@ export async function showResumeJson(elements: DOMElementCache): Promise<void> {
 
 			// Scroll to show the textarea
 			elements.resumeJsonViewer.scrollIntoView({ behavior: 'smooth' });
+			
+			// Adjust popup height after showing content
+			adjustPopupHeight().catch(console.error);
 		}
 	} catch (error) {
 		console.error('Error showing resume JSON:', error);
@@ -288,6 +294,9 @@ export function hideResumeJson(elements: DOMElementCache): void {
 		elements.jsonValidationMessage.classList.add('hidden');
 		elements.jsonValidationMessage.classList.remove('error', 'success');
 	}
+	
+	// Adjust popup height after hiding content
+	adjustPopupHeight().catch(console.error);
 }
 
 /**
