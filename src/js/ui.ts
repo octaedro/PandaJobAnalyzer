@@ -716,9 +716,9 @@ export function adjustPopupHeight(): Promise<void> {
 
 				// Force a layout recalculation by temporarily setting height to auto
 				body.style.height = 'auto';
-				
+
 				// Force a reflow to ensure accurate measurements
-				body.offsetHeight;
+				void body.offsetHeight;
 
 				// Calculate the content height
 				const contentHeight = body.scrollHeight;
@@ -728,14 +728,17 @@ export function adjustPopupHeight(): Promise<void> {
 				const maxHeight = 600;
 
 				// Calculate the optimal height
-				let optimalHeight = Math.max(minHeight, Math.min(contentHeight, maxHeight));
+				let optimalHeight = Math.max(
+					minHeight,
+					Math.min(contentHeight, maxHeight)
+				);
 
 				// Add some padding for better appearance
 				optimalHeight += 10;
 
 				// Apply the height and remove overflow when content fits
 				body.style.height = `${optimalHeight}px`;
-				
+
 				// Manage overflow based on content
 				if (contentHeight + 10 <= maxHeight) {
 					body.style.overflowY = 'hidden';
@@ -751,7 +754,7 @@ export function adjustPopupHeight(): Promise<void> {
 
 				// Clear the promise reference
 				adjustmentPromise = null;
-				
+
 				// Resolve the promise
 				resolve();
 			} catch (error) {
