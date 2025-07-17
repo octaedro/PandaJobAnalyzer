@@ -96,14 +96,26 @@ export class ValidationService {
 		}
 
 		// Enhanced file validation for security
-		
+
 		// Check file name for security threats
 		const dangerousPatterns = [
-			'..', '/', '\\', '<', '>', ':', '"', '|', '?', '*',
-			'<script>', 'javascript:', 'data:', 'vbscript:'
+			'..',
+			'/',
+			'\\',
+			'<',
+			'>',
+			':',
+			'"',
+			'|',
+			'?',
+			'*',
+			'<script>',
+			'javascript:',
+			'data:',
+			'vbscript:',
 		];
-		
-		if (dangerousPatterns.some(pattern => file.name.includes(pattern))) {
+
+		if (dangerousPatterns.some((pattern) => file.name.includes(pattern))) {
 			errors.push('File name contains invalid characters');
 		}
 
@@ -129,7 +141,7 @@ export class ValidationService {
 		// Enhanced size validation
 		const maxSize = 5 * 1024 * 1024; // 5MB
 		const minSize = 1024; // 1KB minimum to prevent empty files
-		
+
 		if (file.size > maxSize) {
 			errors.push(
 				`File size ${this.formatFileSize(file.size)} exceeds maximum allowed size of ${this.formatFileSize(maxSize)}`
@@ -250,24 +262,29 @@ export class ValidationService {
 			return '';
 		}
 
-		return input
-			// Basic HTML entities
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#39;')
-			// Additional XSS protection
-			.replace(/javascript:/gi, '')
-			.replace(/vbscript:/gi, '')
-			.replace(/data:/gi, '')
-			.replace(/on\w+=/gi, '')
-			// Remove null bytes and control characters
-			.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-			// Remove potential Unicode attacks
-			.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '')
-			// Limit length to prevent DoS
-			.substring(0, 10000);
+		return (
+			input
+				// Basic HTML entities
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;')
+				.replace(/'/g, '&#39;')
+				// Additional XSS protection
+				.replace(/javascript:/gi, '')
+				.replace(/vbscript:/gi, '')
+				.replace(/data:/gi, '')
+				.replace(/on\w+=/gi, '')
+				// Remove null bytes and control characters
+				.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+				// Remove potential Unicode attacks
+				.replace(
+					/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
+					''
+				)
+				// Limit length to prevent DoS
+				.substring(0, 10000)
+		);
 	}
 
 	/**

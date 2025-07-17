@@ -72,7 +72,7 @@ describe('apiKeyManager', () => {
 			jobContentEl: document.createElement('div'),
 			companyContentEl: document.createElement('div'),
 			messageArea: document.createElement('div'),
-		} as DOMElementCache;
+		} as unknown as DOMElementCache;
 	});
 
 	describe('initializeApiKeyStatus', () => {

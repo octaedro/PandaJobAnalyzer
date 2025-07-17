@@ -63,13 +63,18 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 						// Use textContent for security (prevents script execution)
 						const textContent = element.textContent || '';
 						const trimmedContent = textContent.trim();
-						
+
 						// Validate content length and safety
-						if (trimmedContent.length > 100 && trimmedContent.length < 50000) {
+						if (
+							trimmedContent.length > 100 &&
+							trimmedContent.length < 50000
+						) {
 							// Basic content validation to prevent malicious content
-							if (!trimmedContent.includes('<script>') && 
+							if (
+								!trimmedContent.includes('<script>') &&
 								!trimmedContent.includes('javascript:') &&
-								!trimmedContent.includes('data:')) {
+								!trimmedContent.includes('data:')
+							) {
 								jobContent = trimmedContent;
 								break;
 							}
@@ -91,13 +96,17 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 						metaDescription &&
 						(metaDescription as HTMLMetaElement).content
 					) {
-						const metaContent = (metaDescription as HTMLMetaElement).content;
+						const metaContent = (metaDescription as HTMLMetaElement)
+							.content;
 						const title = document.title;
-						
+
 						// Validate meta content
-						if (metaContent.length > 10 && metaContent.length < 1000 &&
+						if (
+							metaContent.length > 10 &&
+							metaContent.length < 1000 &&
 							!metaContent.includes('<script>') &&
-							!metaContent.includes('javascript:')) {
+							!metaContent.includes('javascript:')
+						) {
 							jobContent = metaContent + '\n\n' + title;
 						}
 					}
@@ -111,19 +120,30 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 				try {
 					const h1Text = Array.from(document.querySelectorAll('h1'))
 						.map((el) => (el as HTMLElement).textContent || '')
-						.filter(text => text.trim().length > 0 && text.trim().length < 500)
+						.filter(
+							(text) =>
+								text.trim().length > 0 &&
+								text.trim().length < 500
+						)
 						.join('\n');
 					const h2Text = Array.from(document.querySelectorAll('h2'))
 						.map((el) => (el as HTMLElement).textContent || '')
-						.filter(text => text.trim().length > 0 && text.trim().length < 500)
+						.filter(
+							(text) =>
+								text.trim().length > 0 &&
+								text.trim().length < 500
+						)
 						.join('\n');
 
 					if (h1Text || h2Text) {
-						const combinedText = document.title + '\n\n' + h1Text + '\n\n' + h2Text;
+						const combinedText =
+							document.title + '\n\n' + h1Text + '\n\n' + h2Text;
 						// Validate combined text
-						if (combinedText.length < 10000 && 
+						if (
+							combinedText.length < 10000 &&
 							!combinedText.includes('<script>') &&
-							!combinedText.includes('javascript:')) {
+							!combinedText.includes('javascript:')
+						) {
 							jobContent = combinedText;
 						}
 					}
@@ -149,14 +169,19 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 			if (jobContent) {
 				// Remove potential script tags and dangerous content
 				jobContent = jobContent
-					.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+					.replace(
+						/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+						''
+					)
 					.replace(/javascript:/gi, '')
 					.replace(/data:text\/html/gi, '')
 					.trim();
-				
+
 				// Limit final content size
 				if (jobContent.length > 50000) {
-					jobContent = jobContent.substring(0, 50000) + '... [Content truncated for security]';
+					jobContent =
+						jobContent.substring(0, 50000) +
+						'... [Content truncated for security]';
 				}
 			}
 

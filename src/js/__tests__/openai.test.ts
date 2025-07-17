@@ -1,6 +1,6 @@
 /**
  * Tests for OpenAI API Service
- * 
+ *
  * TODO: The following tests need to be implemented:
  * - analyzeJobListing with proper fetch mocking
  * - parseResume with proper response handling
@@ -8,8 +8,8 @@
  * - Invalid JSON response handling
  * - Rate limiting with retry logic
  * - Configuration management
- * 
- * These tests require proper mocking of the fetch API and 
+ *
+ * These tests require proper mocking of the fetch API and
  * better integration with the module's actual implementation.
  */
 
@@ -41,7 +41,7 @@ describe('OpenAI API Service', () => {
 	});
 
 	// TODO: Add tests for analyzeJobListing
-	// TODO: Add tests for parseResume  
+	// TODO: Add tests for parseResume
 	// TODO: Add tests for error handling
 	// TODO: Add tests for rate limiting
 	// TODO: Add tests for configuration management

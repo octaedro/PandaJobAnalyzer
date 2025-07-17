@@ -290,7 +290,9 @@ describe('UI Module', () => {
 			// Wait for debounced function to execute
 			setTimeout(() => {
 				expect(elements.messageArea?.textContent).toBe('Test message');
-				expect(elements.messageArea?.className).toBe('message-area info');
+				expect(elements.messageArea?.className).toBe(
+					'message-area info'
+				);
 				expect(elements.messageArea?.classList.contains('hidden')).toBe(
 					false
 				);

@@ -346,10 +346,10 @@ export function renderResults(
 	}
 
 	showElement(elements.resultsSection);
-	
+
 	// Adjust popup height after rendering results
 	setTimeout(() => adjustPopupHeight(), 100);
-	
+
 	endTimer();
 }
 
@@ -480,7 +480,7 @@ function _showMessageImmediate(
 
 	// Sanitize message content to prevent XSS
 	const sanitizedMessage = ValidationService.sanitizeHtml(message);
-	
+
 	// Safely handle multiline messages without innerHTML
 	msgArea.textContent = ''; // Clear existing content
 	const lines = sanitizedMessage.split('\n');
@@ -695,23 +695,23 @@ export function toggleRankingTab(
 export function adjustPopupHeight(): void {
 	// Get the body element
 	const body = document.body;
-	
+
 	// Calculate the content height
 	const contentHeight = body.scrollHeight;
-	
+
 	// Set limits as specified
 	const minHeight = 200;
 	const maxHeight = 1500;
-	
+
 	// Calculate the optimal height
 	let optimalHeight = Math.max(minHeight, Math.min(contentHeight, maxHeight));
-	
+
 	// Add some padding for better appearance
 	optimalHeight += 20;
-	
+
 	// Apply the height
 	body.style.height = `${optimalHeight}px`;
-	
+
 	// Update the header width to match body width
 	const header = document.querySelector('header') as HTMLElement;
 	if (header) {

@@ -32,7 +32,9 @@ const mockStorage = {
 		}),
 		set: jest.fn((items, callback) => {
 			Object.assign(mockStorage.data, items);
-			if (callback) callback();
+			if (callback) {
+				callback();
+			}
 		}),
 		remove: jest.fn((keys, callback) => {
 			if (typeof keys === 'string') {
@@ -40,7 +42,9 @@ const mockStorage = {
 			} else if (Array.isArray(keys)) {
 				keys.forEach((key) => delete mockStorage.data[key]);
 			}
-			if (callback) callback();
+			if (callback) {
+				callback();
+			}
 		}),
 		clear: jest.fn((callback) => {
 			mockStorage.data = {};
@@ -63,7 +67,9 @@ const mockStorage = {
 		}),
 		set: jest.fn((items, callback) => {
 			Object.assign(mockStorage.data, items);
-			if (callback) callback();
+			if (callback) {
+				callback();
+			}
 		}),
 		remove: jest.fn((keys, callback) => {
 			if (typeof keys === 'string') {
@@ -71,7 +77,9 @@ const mockStorage = {
 			} else if (Array.isArray(keys)) {
 				keys.forEach((key) => delete mockStorage.data[key]);
 			}
-			if (callback) callback();
+			if (callback) {
+				callback();
+			}
 		}),
 		clear: jest.fn((callback) => {
 			mockStorage.data = {};
@@ -89,7 +97,7 @@ describe('Storage Service', () => {
 		// Reset storage data
 		mockStorage.data = {};
 		jest.clearAllMocks();
-		
+
 		// Reset encryption service mocks
 		const { EncryptionService } = require('../utils/encryption');
 		EncryptionService.encrypt.mockResolvedValue('encrypted_data');
@@ -101,7 +109,7 @@ describe('Storage Service', () => {
 		// TODO: Fix encryption service mocking for API key tests
 		// The encryption service mock needs to be properly configured to:
 		// - Return encrypted data when encrypting
-		// - Return decrypted data when decrypting 
+		// - Return decrypted data when decrypting
 		// - Handle the isEncrypted check correctly
 		// Current issue: Mock functions are not working with the async encryption flow
 

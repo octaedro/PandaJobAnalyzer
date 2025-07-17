@@ -87,7 +87,7 @@ export class MemoryCache<T> {
 export class Debouncer {
 	private timeouts = new Map<string, number>();
 
-	debounce<T extends (...args: any[]) => any>(
+	debounce<T extends (...args: unknown[]) => unknown>(
 		fn: T,
 		delay: number,
 		key: string = 'default'
@@ -127,7 +127,7 @@ export class Throttler {
 	private lastCall = new Map<string, number>();
 	private timeouts = new Map<string, number>();
 
-	throttle<T extends (...args: any[]) => any>(
+	throttle<T extends (...args: unknown[]) => unknown>(
 		fn: T,
 		delay: number,
 		key: string = 'default'
@@ -331,7 +331,17 @@ export class PerformanceMonitor {
 	}
 
 	getAllStats() {
-		const stats: Record<string, any> = {};
+		const stats: Record<
+			string,
+			{
+				count: number;
+				avg: number;
+				min: number;
+				max: number;
+				p50: number;
+				p95: number;
+			} | null
+		> = {};
 		for (const label of this.metrics.keys()) {
 			stats[label] = this.getStats(label);
 		}

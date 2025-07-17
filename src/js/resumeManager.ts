@@ -106,7 +106,9 @@ export async function handleResumeUpload(
 		);
 
 		// Sanitize data
-		const sanitizedData = PDFProcessor.sanitizeResumeData(resumeData);
+		const sanitizedData = PDFProcessor.sanitizeResumeData(
+			resumeData
+		) as ResumeData;
 		if (!sanitizedData) {
 			showMessage('Failed to process resume data', elements, 'error');
 			return false;
@@ -371,7 +373,9 @@ export async function handleResumeUpdate(
 		}
 
 		// Sanitize the data for security
-		const sanitizedData = PDFProcessor.sanitizeResumeData(updatedData);
+		const sanitizedData = PDFProcessor.sanitizeResumeData(
+			updatedData
+		) as ResumeData;
 
 		// Preserve metadata
 		const existingData = await storageService.getResumeData();

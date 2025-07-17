@@ -285,10 +285,10 @@ export class ErrorHandler {
 	private static logError(error: AppError): void {
 		// Filter sensitive information from context
 		const safeContext = this.filterSensitiveInfo(error.context);
-		
+
 		// Only log essential information in production
 		const isDevelopment = process.env.NODE_ENV === 'development';
-		
+
 		if (isDevelopment) {
 			console.error(`[${error.type}] ${error.message}`, {
 				timestamp: error.timestamp,
@@ -314,20 +314,29 @@ export class ErrorHandler {
 		}
 
 		const filtered = { ...context };
-		
+
 		// Remove sensitive keys
 		const sensitiveKeys = [
-			'apiKey', 'password', 'token', 'secret', 'key',
-			'authorization', 'auth', 'credential', 'session'
+			'apiKey',
+			'password',
+			'token',
+			'secret',
+			'key',
+			'authorization',
+			'auth',
+			'credential',
+			'session',
 		];
-		
+
 		for (const key in filtered) {
-			if (sensitiveKeys.some(sensitive => 
-				key.toLowerCase().includes(sensitive.toLowerCase())
-			)) {
+			if (
+				sensitiveKeys.some((sensitive) =>
+					key.toLowerCase().includes(sensitive.toLowerCase())
+				)
+			) {
 				filtered[key] = '[REDACTED]';
 			}
-			
+
 			// Recursively filter nested objects
 			if (typeof filtered[key] === 'object' && filtered[key] !== null) {
 				filtered[key] = this.filterSensitiveInfo(filtered[key]);

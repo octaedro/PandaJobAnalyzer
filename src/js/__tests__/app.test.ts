@@ -107,9 +107,9 @@ describe('PandaJobAnalyzerApp', () => {
 		});
 
 		it('should handle initialization errors', async () => {
-			(apiKeyManager.initializeApiKeyStatus as jest.Mock).mockRejectedValue(
-				new Error('Initialization failed')
-			);
+			(
+				apiKeyManager.initializeApiKeyStatus as jest.Mock
+			).mockRejectedValue(new Error('Initialization failed'));
 			(ui.showMessage as jest.Mock).mockImplementation(() => {});
 
 			await app.initialize();

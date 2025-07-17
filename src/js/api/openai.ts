@@ -191,7 +191,6 @@ class OpenAIService {
 		}
 	}
 
-
 	/**
 	 * Make API request with retry logic for rate limiting
 	 * @param {OpenAIRequest} prompt - The request payload
@@ -240,11 +239,11 @@ class OpenAIService {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
-						'Authorization': `Bearer ${apiKey}`,
+						Authorization: `Bearer ${apiKey}`,
 						'User-Agent': 'PandaJobAnalyzer/1.0.0',
 						'X-Request-ID': callId,
 						'X-Requested-With': 'XMLHttpRequest',
-						'Origin': chrome.runtime.getURL(''),
+						Origin: chrome.runtime.getURL(''),
 					},
 					body: JSON.stringify(prompt),
 				});
@@ -256,14 +255,21 @@ class OpenAIService {
 				if (response.ok) {
 					// Validate response headers for security
 					const contentType = response.headers.get('content-type');
-					if (!contentType || !contentType.includes('application/json')) {
+					if (
+						!contentType ||
+						!contentType.includes('application/json')
+					) {
 						throw new Error('Invalid response content type');
 					}
 
 					const data = (await response.json()) as OpenAIResponse;
-					
+
 					// Validate response structure
-					if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+					if (
+						!data.choices ||
+						!Array.isArray(data.choices) ||
+						data.choices.length === 0
+					) {
 						throw new Error('Invalid response structure');
 					}
 
@@ -277,13 +283,14 @@ class OpenAIService {
 						console.log(
 							`✅ [${callId}] ${requestType} - Success on attempt ${attempt}`
 						);
-						
+
 						// Validate JSON before parsing
 						const jsonString = jsonMatch[0];
-						if (jsonString.length > 100000) { // 100KB limit
+						if (jsonString.length > 100000) {
+							// 100KB limit
 							throw new Error('Response JSON too large');
 						}
-						
+
 						return JSON.parse(jsonString);
 					} else {
 						throw new Error(
@@ -356,7 +363,6 @@ class OpenAIService {
 			}
 		}
 	}
-
 
 	/**
 	 * Parse resume using OpenAI API with extracted text content
@@ -751,7 +757,10 @@ Return ONLY the JSON, no additional text or explanations.`;
 	 * @param content
 	 * @param resumeData
 	 */
-	private generateCacheKey(content: string, resumeData?: ResumeData | null): string {
+	private generateCacheKey(
+		content: string,
+		resumeData?: ResumeData | null
+	): string {
 		const contentHash = this.hashString(content.substring(0, 1000)); // Use first 1000 chars
 		const resumeHash = resumeData
 			? this.hashString(JSON.stringify(resumeData).substring(0, 500))
