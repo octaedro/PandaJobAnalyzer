@@ -32,7 +32,6 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
-    "pdf-parse": "^1.1.1",
-    "pdfjs-dist": "^5.3.93"
+    "pdfjs-dist": "^3.11.174"
   }
 }

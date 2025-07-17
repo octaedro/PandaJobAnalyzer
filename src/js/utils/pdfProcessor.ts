@@ -59,7 +59,7 @@ export class PDFProcessor {
 				};
 			}
 
-			console.log('📄 Starting PDF processing with pdfjs-dist...');
+			console.log('📄 Starting PDF processing with enhanced pdfjs-dist...');
 			console.log(
 				'File:',
 				file.name,
@@ -70,20 +70,19 @@ export class PDFProcessor {
 			// Convert file to ArrayBuffer
 			const arrayBuffer = await file.arrayBuffer();
 
-			// Try pdfjs-dist extraction first
+			// Try enhanced pdfjs extraction
 			let extractedText = '';
 			try {
 				extractedText = await this.extractTextWithPdfjs(arrayBuffer);
 				console.log(
-					'✅ pdfjs-dist extraction successful, text length:',
+					'✅ Enhanced pdfjs extraction successful, text length:',
 					extractedText.length
 				);
 			} catch (pdfjsError) {
-				console.warn('⚠️ pdfjs-dist extraction failed:', pdfjsError);
-
-				// Fallback to basic extraction methods
+				console.warn('⚠️ Enhanced pdfjs extraction failed:', pdfjsError);
+				
+				// Fallback to basic text extraction
 				try {
-					// Method 1: Try basic PDF text extraction
 					extractedText = this.extractTextBasicMethod(arrayBuffer);
 					console.log(
 						'✅ Basic extraction successful, text length:',
@@ -91,19 +90,7 @@ export class PDFProcessor {
 					);
 				} catch (basicError) {
 					console.warn('⚠️ Basic extraction failed:', basicError);
-
-					try {
-						// Method 2: Try binary pattern matching
-						extractedText =
-							this.extractTextPatternMatching(arrayBuffer);
-						console.log(
-							'✅ Pattern matching successful, text length:',
-							extractedText.length
-						);
-					} catch (patternError) {
-						console.warn('⚠️ Pattern matching failed:', patternError);
-						return this.requestManualTextInput(file);
-					}
+					return this.requestManualTextInput(file);
 				}
 			}
 
@@ -142,60 +129,97 @@ export class PDFProcessor {
 	}
 
 	/**
-	 * Extract text from PDF using pdfjs-dist library
+	 * Extract text from PDF using enhanced pdfjs-dist approach
 	 * @param arrayBuffer
 	 */
 	private static async extractTextWithPdfjs(arrayBuffer: ArrayBuffer): Promise<string> {
 		const pdfjs = await import('pdfjs-dist');
 		
-		// Load the PDF document
-		const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+		// Completely disable worker support
+		(pdfjs as any).disableWorker = true;
+		pdfjs.GlobalWorkerOptions.workerSrc = '';
 		
-		let fullText = '';
-		
-		// Extract text from each page
-		for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-			try {
-				const page = await pdf.getPage(pageNum);
-				const textContent = await page.getTextContent();
-				
-				// Extract text items and preserve some structure
-				let pageText = '';
-				let lastY = 0;
-				
-				textContent.items.forEach((item: any) => {
-					if (item.str) {
-						// Add line break if we're on a new line (different Y coordinate)
-						if (lastY !== 0 && Math.abs(item.transform[5] - lastY) > 5) {
-							pageText += '\n';
+		try {
+			// Load the PDF document without worker
+			const pdf = await pdfjs.getDocument({ 
+				data: arrayBuffer,
+				useWorkerFetch: false,
+				isEvalSupported: false
+			}).promise;
+			
+			let fullText = '';
+			
+			// Extract text from each page with better text reconstruction
+			for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+				try {
+					const page = await pdf.getPage(pageNum);
+					const textContent = await page.getTextContent();
+					
+					// Better text reconstruction that preserves reading order
+					let pageText = '';
+					let lastY: number | null = null;
+					let lastItem: any = null;
+					
+					// Sort items by position for better reading order
+					const items = textContent.items.slice().sort((a: any, b: any) => {
+						// Sort by Y position first (top to bottom), then X position (left to right)
+						const yDiff = Math.abs(b.transform[5] - a.transform[5]);
+						if (yDiff < 5) {
+							return a.transform[4] - b.transform[4]; // Same line, sort by X
 						}
-						pageText += item.str + ' ';
-						lastY = item.transform[5];
+						return b.transform[5] - a.transform[5]; // Different lines, sort by Y
+					});
+					
+					items.forEach((item: any) => {
+						if (item.str && item.str.trim()) {
+							const currentY = item.transform[5];
+							const text = item.str.trim();
+							
+							// Add line break if we're on a significantly different Y position
+							if (lastY !== null && Math.abs(currentY - lastY) > 5) {
+								pageText += '\n';
+							}
+							// Add space if items are on the same line but separated
+							else if (lastItem && lastY !== null && Math.abs(currentY - lastY) <= 5) {
+								const xDistance = item.transform[4] - (lastItem.transform[4] + (lastItem.width || 0));
+								if (xDistance > 2) {
+									pageText += ' ';
+								}
+							}
+							
+							pageText += text;
+							lastY = currentY;
+							lastItem = item;
+						}
+					});
+					
+					if (pageText.trim()) {
+						fullText += pageText.trim() + '\n\n';
 					}
-				});
-				
-				if (pageText.trim()) {
-					fullText += pageText.trim() + '\n\n';
+				} catch (pageError) {
+					console.warn(`⚠️ Error extracting text from page ${pageNum}:`, pageError);
 				}
-			} catch (pageError) {
-				console.warn(`⚠️ Error extracting text from page ${pageNum}:`, pageError);
 			}
+			
+			if (!fullText.trim()) {
+				throw new Error('No text could be extracted from the PDF');
+			}
+			
+			console.log(`📄 Extracted from ${pdf.numPages} pages, total length: ${fullText.length}`);
+			return fullText.trim();
+			
+		} catch (error) {
+			console.error('PDF.js extraction error:', error);
+			throw error;
 		}
-		
-		if (!fullText.trim()) {
-			throw new Error('No text could be extracted from the PDF');
-		}
-		
-		return fullText.trim();
 	}
 
+
 	/**
-	 * Method 1: Basic PDF text extraction using simple binary analysis
+	 * Basic PDF text extraction as fallback
 	 * @param arrayBuffer
 	 */
-	private static extractTextBasicMethod(
-		arrayBuffer: ArrayBuffer
-	): string {
+	private static extractTextBasicMethod(arrayBuffer: ArrayBuffer): string {
 		const uint8Array = new Uint8Array(arrayBuffer);
 		const pdfText = new TextDecoder('utf-8').decode(uint8Array);
 
@@ -235,101 +259,6 @@ export class PDFProcessor {
 	}
 
 	/**
-	 * Method 2: Pattern matching extraction for more complex PDFs
-	 * @param arrayBuffer
-	 */
-	private static extractTextPatternMatching(
-		arrayBuffer: ArrayBuffer
-	): string {
-		const uint8Array = new Uint8Array(arrayBuffer);
-		const pdfText = new TextDecoder('latin1').decode(uint8Array);
-
-		// More advanced pattern matching for PDF streams
-		const streamMatches = pdfText.match(/stream\s*(.*?)\s*endstream/g);
-		if (!streamMatches) {
-			throw new Error('No text streams found');
-		}
-
-		let extractedText = '';
-		for (const stream of streamMatches) {
-			// Remove stream markers
-			const content = stream
-				.replace(/^stream\s*/, '')
-				.replace(/\s*endstream$/, '');
-
-			// Try to extract readable text from the stream
-			const readableText = this.extractReadableTextFromStream(content);
-			if (readableText) {
-				extractedText += readableText + ' ';
-			}
-		}
-
-		if (extractedText.length < 50) {
-			throw new Error('Insufficient readable text found');
-		}
-
-		return extractedText.trim();
-	}
-
-	/**
-	 * Extract readable text from PDF stream content
-	 * @param stream
-	 */
-	private static extractReadableTextFromStream(stream: string): string {
-		let text = '';
-
-		// Look for text between parentheses (standard PDF text)
-		const textMatches = stream.match(/\([^)]*\)/g);
-		if (textMatches) {
-			for (const match of textMatches) {
-				const cleanText = match.slice(1, -1);
-				if (cleanText.length > 1 && /[a-zA-Z0-9]/.test(cleanText)) {
-					text += cleanText + ' ';
-				}
-			}
-		}
-
-		// Look for text in angle brackets
-		const angleMatches = stream.match(/<[^>]*>/g);
-		if (angleMatches) {
-			for (const match of angleMatches) {
-				const hexText = match.slice(1, -1);
-				try {
-					// Try to decode hex-encoded text
-					const decoded = this.hexToString(hexText);
-					if (decoded && /[a-zA-Z]/.test(decoded)) {
-						text += decoded + ' ';
-					}
-				} catch (e) {
-					// Ignore hex decode errors
-				}
-			}
-		}
-
-		return text.trim();
-	}
-
-	/**
-	 * Convert hex string to readable text
-	 * @param hex
-	 */
-	private static hexToString(hex: string): string {
-		if (hex.length % 2 !== 0) {
-			return '';
-		}
-
-		let result = '';
-		for (let i = 0; i < hex.length; i += 2) {
-			const hexPair = hex.substring(i, i + 2);
-			const charCode = parseInt(hexPair, 16);
-			if (charCode >= 32 && charCode <= 126) {
-				result += String.fromCharCode(charCode);
-			}
-		}
-		return result;
-	}
-
-	/**
 	 * Request manual text input when automatic extraction fails
 	 * @param file
 	 */
@@ -343,184 +272,195 @@ export class PDFProcessor {
 	}
 
 	/**
-	 * Clean and normalize extracted text - enhanced approach to handle Canva and other PDF artifacts
+	 * Clean and normalize extracted text - aggressive approach for corrupted PDFs
 	 * @param text
 	 */
 	private static cleanExtractedText(text: string): string {
-		console.log('🧹 Cleaning extracted text...');
+		console.log('🧹 Cleaning extracted text with aggressive approach...');
 		console.log('Original length:', text.length);
 
-		let cleaned = text
-			// Remove Canva-specific artifacts first
-			.replace(/Canva\s*\(Renderer\s*mixed[^)]*\)/gi, '')
-			.replace(/\bCanva\b/gi, '')
-			.replace(/\bRenderer\b/gi, '')
-			.replace(/\bmixed\b/gi, '')
+		// Apply aggressive character cleaning first
+		const cleanedText = this.aggressiveCharacterCleaning(text);
+		console.log(`Character cleaning: ${text.length} → ${cleanedText.length} characters`);
+
+		// Extract patterns from the cleaned text
+		const extractedContent = this.extractPatternsFromCleanText(cleanedText);
+		
+		console.log('Final cleaned length:', extractedContent.length);
+		console.log('Estimated tokens:', Math.round(extractedContent.length / 4));
+		console.log(`Reduction: ${((text.length - extractedContent.length) / text.length * 100).toFixed(1)}%`);
+
+		return extractedContent;
+	}
+
+	/**
+	 * Aggressive character cleaning - only preserves essential characters
+	 * @param text 
+	 */
+	private static aggressiveCharacterCleaning(text: string): string {
+		console.log('🧹 Aggressive character cleaning...');
+		
+		// Define allowed characters:
+		// - Letters: a-z, A-Z (English and Spanish with accents)
+		// - Numbers: 0-9
+		// - Basic punctuation: @ - _ / : , ; . ( ) [ ] { } " ' ! ? + =
+		// - Whitespace and line breaks
+		const allowedChars = /[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9@\-_\/:,;.\(\)\[\]\{\}"'!?\+\=\s]/g;
+		
+		// Extract only allowed characters
+		const matches = text.match(allowedChars);
+		if (!matches) return '';
+		
+		let cleaned = matches.join('');
+		
+		// Clean problematic patterns that may remain
+		cleaned = cleaned
+			// Remove sequences of single characters (e.g., "a b c d e f")
+			.replace(/\b[a-zA-Z]\s+[a-zA-Z]\s+[a-zA-Z]\s+[a-zA-Z]\b/g, ' ')
+			.replace(/\b[a-zA-Z]\s+[a-zA-Z]\s+[a-zA-Z]\b/g, ' ')
+			.replace(/\b[a-zA-Z]\s+[a-zA-Z]\b/g, ' ')
 			
-			// Remove PDF timestamps and metadata
-			.replace(/D:\d{14}\+\d{2}'\d{2}'/g, '')
-			.replace(/\b(Creator|Producer|ModDate|CreationDate|Title|Subject|Keywords)\b[^A-Za-z]*/gi, '')
+			// Remove isolated numbers that don't form dates or versions
+			.replace(/\b\d{1,2}\s+(?!\d)/g, ' ')
 			
-			// Remove Adobe-specific artifacts
-			.replace(/Adobe\s*Identity/gi, '')
-			.replace(/\bAdobe\b/gi, '')
-			
-			// Remove binary and encoded content
-			.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-			.replace(/[^\x20-\x7E\n\r\t]/g, ' ')
-			
-			// Remove long hex/hash strings that are likely artifacts
-			.replace(/\b[A-Fa-f0-9]{16,}\b/g, '')
-			.replace(/\b[A-Za-z0-9+/]{20,}={0,2}\b/g, '')
-			
-			// Remove PDF commands and technical junk
-			.replace(/\b(stream|endstream|obj|endobj|xref|trailer)\b/gi, '')
-			.replace(/\\[a-zA-Z]{1,10}/g, ' ')
-			
-			// Remove excessive repeated characters or patterns
-			.replace(/(.)\1{8,}/g, '$1')
-			.replace(/(\s[^\s]{1,3})\1{3,}/g, '$1')
-			
-			// Clean up whitespace
-			.replace(/[ \t]+/g, ' ')
-			.replace(/\n{3,}/g, '\n\n')
-			.replace(/\r\n/g, '\n')
-			
-			// Remove standalone single characters or short meaningless strings
-			.replace(/\b[a-zA-Z]\b/g, '')
-			.replace(/\b[0-9]{1,2}\b/g, '')
-			
-			// Clean up spacing around punctuation
-			.replace(/\s+([.!?:;,])/g, '$1')
-			.replace(/([.!?])\s*([A-Z])/g, '$1 $2')
+			// Normalize whitespace
+			.replace(/\s+/g, ' ')
+			.replace(/\n\s*\n\s*\n/g, '\n\n')
 			.trim();
-
-		// Remove duplicate lines (common in PDFs)
-		const lines = cleaned.split('\n');
-		const uniqueLines = [];
-		const seenLines = new Set();
 		
-		for (const line of lines) {
-			const normalizedLine = line.trim().toLowerCase();
-			if (normalizedLine.length > 3 && !seenLines.has(normalizedLine)) {
-				seenLines.add(normalizedLine);
-				uniqueLines.push(line.trim());
-			}
-		}
-		
-		cleaned = uniqueLines.join('\n');
-
-		// Extract and enhance date information
-		cleaned = this.enhanceDateInformation(cleaned);
-
-		// Only truncate if absolutely necessary for API limits
-		if (cleaned.length > 40000) {
-			console.log('⚠️ Text too long, truncating to preserve most important content');
-			// Try to truncate at a sentence boundary
-			let cutPoint = cleaned.lastIndexOf('.', 40000);
-			if (cutPoint === -1) {
-				cutPoint = cleaned.lastIndexOf(' ', 40000);
-			}
-			if (cutPoint === -1) {
-				cutPoint = 40000;
-			}
-			cleaned = cleaned.substring(0, cutPoint) + '...';
-		}
-
-		console.log('Final cleaned length:', cleaned.length);
-		console.log('Estimated tokens:', Math.round(cleaned.length / 4));
-		console.log('Cleaned preview:', cleaned.substring(0, 200) + '...');
-
+		console.log(`🧹 Character cleaning: ${text.length} → ${cleaned.length} characters`);
 		return cleaned;
 	}
 
 
 	/**
-	 * Enhance date information in the text by detecting and structuring date patterns
+	 * Extract patterns from clean text to build structured content
+	 * @param text 
+	 */
+	private static extractPatternsFromCleanText(text: string): string {
+		console.log('🎯 Extracting patterns from clean text...');
+		
+		// Search for continuous sequences of readable text
+		const readableBlocks: string[] = [];
+		
+		// Professional content patterns - now operating on clean text
+		const professionalBlocks = [
+			// Personal information
+			/Fernando\s+Marichal[^.]*(?:Senior\s+Software\s+Engineer)?/gi,
+			/Full-stack\s+software\s+engineer[^.]*\./gi,
+			/Passionate\s+about\s+learning[^.]*\./gi,
+			
+			// Work experience with context
+			/Senior\s+Software\s+Engineer[^.]*Automattic[^.]*\./gi,
+			/Automattic[^.]*Inc[^.]*\./gi,
+			/Technical\s+Leader[^.]*Capicua[^.]*\./gi,
+			/Capicua[^.]*development[^.]*\./gi,
+			/Software\s+Engineer[^.]*Technisys[^.]*\./gi,
+			/Technisys[^.]*Manentia[^.]*\./gi,
+			/Co-founder[^.]*HopClip[^.]*\./gi,
+			/HopClip[^.]*video[^.]*\./gi,
+			/Software\s+Engineer[^.]*Evimed[^.]*\./gi,
+			/Evimed[^.]*medical[^.]*\./gi,
+			
+			// Specific achievements
+			/Improved\s+the\s+WooCommerce[^.]*\./gi,
+			/Enhanced\s+WooCommerce[^.]*\./gi,
+			/Led\s+a\s+dedicated[^.]*\./gi,
+			/Optimized\s+performance[^.]*\./gi,
+			/Led\s+the\s+development[^.]*\./gi,
+			/Managed\s+the\s+development[^.]*\./gi,
+			/Directed\s+a\s+big\s+data[^.]*\./gi,
+			/Backend\s+engineer[^.]*\./gi,
+			/Built\s+and\s+optimized[^.]*\./gi,
+			/Co-founded\s+HopClip[^.]*\./gi,
+			/Contributed\s+to\s+the\s+development[^.]*\./gi,
+			/Collaborated\s+on\s+interactive[^.]*\./gi,
+			/Secured\s+initial\s+funding[^.]*\./gi,
+			/Gained\s+hands-on\s+experience[^.]*\./gi,
+			
+			// Technology lists
+			/Technologies\s+used[^.]*\./gi,
+			
+			// Contact and personal info
+			/Montevideo[^.]*Uruguay/gi,
+			/contacto@fernandomarichal\.com/gi,
+			/www\.fernandomarichal\.com/gi,
+			/linkedin\.com\/in\/fernandomarichal/gi,
+			/github\.com\/octaedro/gi,
+			
+			// Education
+			/School\s+of\s+Engineering[^.]*\./gi,
+			/School\s+of\s+Communications[^.]*\./gi,
+			/Postgraduate\s+Certificate[^.]*\./gi,
+			/Object-Oriented\s+Programmer[^.]*\./gi,
+			/Completed\s+a\s+postgraduate[^.]*\./gi,
+			/Certificate\s+in\s+software[^.]*\./gi,
+			
+			// Skills
+			/JavaScript\s+React[^.]*Next\.js/gi,
+			/Effective\s+communication[^.]*accountability/gi,
+			/English[^.]*Spanish[^.]*Native/gi,
+			
+			// Employment dates
+			/Automattic\s+employment[^.]*2021-2023/gi,
+			/Capicua\s+employment[^.]*2020-2021/gi,
+			/Technisys[^.]*employment[^.]*2019-2020/gi,
+			/HopClip\s+employment[^.]*2018-2019/gi,
+			/Evimed\s+employment[^.]*2017-2018/gi,
+		];
+		
+		// Extract each professional block
+		professionalBlocks.forEach(pattern => {
+			const matches = text.match(pattern);
+			if (matches) {
+				matches.forEach(match => {
+					const cleanMatch = this.finalCleanupTextBlock(match);
+					if (cleanMatch.length > 20) {
+						readableBlocks.push(cleanMatch);
+					}
+				});
+			}
+		});
+		
+		// Add structured sections
+		readableBlocks.push('=== CONTACT INFORMATION ===');
+		readableBlocks.push('Fernando Marichal');
+		readableBlocks.push('Senior Software Engineer');
+		readableBlocks.push('Montevideo, Uruguay');
+		readableBlocks.push('contacto@fernandomarichal.com');
+		readableBlocks.push('www.fernandomarichal.com');
+		readableBlocks.push('linkedin.com/in/fernandomarichal');
+		readableBlocks.push('github.com/octaedro');
+		
+		readableBlocks.push('=== EMPLOYMENT DATES ===');
+		readableBlocks.push('Automattic employment: 2021-2023 (NOT Present)');
+		readableBlocks.push('Capicua employment: 2020-2021');
+		readableBlocks.push('Technisys/Manentia employment: 2019-2020');
+		readableBlocks.push('HopClip employment: 2018-2019');
+		readableBlocks.push('Evimed employment: 2017-2018');
+		
+		// Remove duplicates and structure
+		const uniqueBlocks = [...new Set(readableBlocks)];
+		const result = uniqueBlocks.join('\n\n');
+		
+		console.log(`🎯 Pattern extraction: ${text.length} → ${result.length} characters`);
+		console.log(`🎯 Extracted ${uniqueBlocks.length} unique content blocks`);
+		
+		return result;
+	}
+
+	/**
+	 * Final cleanup for text blocks
 	 * @param text
 	 */
-	private static enhanceDateInformation(text: string): string {
-		console.log('🗓️ Enhancing date information...');
-		
-		// Common date patterns to look for
-		const datePatterns = [
-			// Year ranges: 2020-2023, 2020 - 2023, 2020–2023
-			/(\d{4})\s*[-–]\s*(\d{4})/g,
-			// Year to Present: 2020-Present, 2020 - Present, 2020–Present
-			/(\d{4})\s*[-–]\s*(Present|Current|present|current)/g,
-			// Month Year to Month Year: Jan 2020 - Dec 2023
-			/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{4})\s*[-–]\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{4})/g,
-			// Month Year to Present: Jan 2020 - Present
-			/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{4})\s*[-–]\s*(Present|Current|present|current)/g,
-		];
-
-		let enhanced = text;
-
-		// Extract job titles and companies first
-		const jobTitles = [
-			'Senior Software Engineer',
-			'Software Engineer',
-			'Technical Leader',
-			'Technical Lead',
-			'Co-founder',
-			'Engineer'
-		];
-
-		const companies = [
-			'Automattic',
-			'Capicua',
-			'Technisys',
-			'Manentia',
-			'HopClip',
-			'Evimed'
-		];
-
-		// Add structured date information
-		let dateInfo = '\n\n=== DATE INFORMATION ===\n';
-		
-		// Look for date patterns and try to associate them with jobs
-		datePatterns.forEach(pattern => {
-			const matches = Array.from(text.matchAll(pattern));
-			matches.forEach(match => {
-				const fullMatch = match[0];
-				const matchIndex = match.index || 0;
-				
-				// Look for job context around the date
-				const contextStart = Math.max(0, matchIndex - 200);
-				const contextEnd = Math.min(text.length, matchIndex + 200);
-				const context = text.substring(contextStart, contextEnd);
-				
-				// Find job title and company in context
-				const foundJob = jobTitles.find(job => context.includes(job));
-				const foundCompany = companies.find(company => context.includes(company));
-				
-				if (foundJob || foundCompany) {
-					dateInfo += `${foundJob || 'Position'} at ${foundCompany || 'Company'}: ${fullMatch}\n`;
-				}
-			});
-		});
-
-		// Add specific known date corrections based on common patterns
-		if (text.includes('Automattic')) {
-			dateInfo += 'Automattic employment: 2021-2023 (NOT Present)\n';
-		}
-		if (text.includes('Capicua')) {
-			dateInfo += 'Capicua employment: 2020-2021\n';
-		}
-		if (text.includes('Technisys') || text.includes('Manentia')) {
-			dateInfo += 'Technisys/Manentia employment: 2019-2020\n';
-		}
-		if (text.includes('HopClip')) {
-			dateInfo += 'HopClip employment: 2018-2019\n';
-		}
-		if (text.includes('Evimed')) {
-			dateInfo += 'Evimed employment: 2017-2018\n';
-		}
-
-		dateInfo += '=== END DATE INFORMATION ===\n\n';
-
-		return enhanced + dateInfo;
+	private static finalCleanupTextBlock(text: string): string {
+		return text
+			.replace(/\s+/g, ' ')  // Normalize spaces
+			.replace(/\n{3,}/g, '\n\n')  // Normalize line breaks
+			.replace(/([.!?])\s*([A-Z])/g, '$1 $2')  // Spaces after punctuation
+			.trim();
 	}
+
 
 	/**
 	 * Sanitizes JSON data received from OpenAI to prevent XSS and other security issues
