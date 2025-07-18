@@ -50,6 +50,7 @@ export interface DOMElementCache {
 	matchCircle: HTMLElement | null;
 	matchPercentage: HTMLElement | null;
 	matchStatus: HTMLElement | null;
+	matchSummary: HTMLElement | null;
 	missingList: HTMLElement | null;
 }
 
@@ -117,6 +118,7 @@ export function cacheDOMElements(): DOMElementCache {
 		matchCircle: document.getElementById('matchCircle'),
 		matchPercentage: document.getElementById('matchPercentage'),
 		matchStatus: document.getElementById('matchStatus'),
+		matchSummary: document.getElementById('matchSummary'),
 		missingList: document.getElementById('missingList'),
 	};
 }
@@ -341,7 +343,12 @@ export function renderResults(
 
 	if (hasMatchData) {
 		// Update ranking tab with data
-		updateRankingTab(results.match!, results.missing!, elements);
+		updateRankingTab(
+			results.match!,
+			results.missing!,
+			elements,
+			results.summary
+		);
 		// Show ranking tab and make it active by default
 		toggleRankingTab(true, elements);
 	} else {
@@ -558,11 +565,13 @@ export function updateApiKeyDisplay(
  * @param {number} match - Match percentage (1-100)
  * @param {string[]} missing - Array of missing requirements
  * @param {DOMElementCache} elements - Cached DOM elements
+ * @param {string} [summary] - Optional summary of the match analysis
  */
 export function updateRankingTab(
 	match: number,
 	missing: string[],
-	elements: DOMElementCache
+	elements: DOMElementCache,
+	summary?: string
 ): void {
 	if (
 		!elements.matchPercentage ||
@@ -605,6 +614,11 @@ export function updateRankingTab(
 
 	// Update circle
 	elements.matchCircle.className = `match-circle ${circleClass}`;
+
+	// Update summary if provided
+	if (elements.matchSummary && summary) {
+		elements.matchSummary.textContent = summary;
+	}
 
 	// Update missing requirements list
 	if (elements.missingList) {

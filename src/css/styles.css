@@ -892,6 +892,31 @@ button:active {
   border-color: #17a2b8;
 }
 
+/* Summary section */
+.summary-section {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 20px;
+}
+
+.summary-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #333;
+  text-align: center;
+}
+
+.match-summary {
+  margin: 0;
+  color: #555;
+  font-size: 14px;
+  line-height: 1.5;
+  background-color: #f0f8ff;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: left;
+}
+
 .missing-section {
   width: 100%;
   max-width: 400px;

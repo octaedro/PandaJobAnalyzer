@@ -184,7 +184,7 @@ function updateResumeDisplay(
 		// Also hide JSON viewer if it's open
 		hideResumeJson(elements);
 	}
-	
+
 	// Adjust popup height after content changes
 	adjustPopupHeight().catch(console.error);
 }
@@ -271,7 +271,7 @@ export async function showResumeJson(elements: DOMElementCache): Promise<void> {
 
 			// Scroll to show the textarea
 			elements.resumeJsonViewer.scrollIntoView({ behavior: 'smooth' });
-			
+
 			// Adjust popup height after showing content
 			adjustPopupHeight().catch(console.error);
 		}
@@ -294,7 +294,7 @@ export function hideResumeJson(elements: DOMElementCache): void {
 		elements.jsonValidationMessage.classList.add('hidden');
 		elements.jsonValidationMessage.classList.remove('error', 'success');
 	}
-	
+
 	// Adjust popup height after hiding content
 	adjustPopupHeight().catch(console.error);
 }

@@ -30,6 +30,7 @@ export interface AnalysisResult {
 	} | null;
 	match?: number;
 	missing?: string[];
+	summary?: string;
 	[key: string]: unknown;
 }
 
@@ -81,14 +82,37 @@ class OpenAIService {
 
 		const matchingFields = resumeData
 			? '- match (integer from 1 to 100 representing how well the candidate matches the job)\n' +
-				'- missing (array of specific things the candidate needs to achieve 100% match, e.g., ["Experience with AWS EC2", "React certification", "5+ years in leadership"])\n'
+				'- missing (array of specific things the candidate needs to achieve 100% match, e.g., ["Experience with AWS EC2", "React certification", "5+ years in leadership"])\n' +
+				'- summary (string summarizing the match analysis, including location compatibility)\n'
 			: '';
 
 		const systemPrompt =
 			'You are a helpful assistant that analyzes job listings and extracts key information. Return a JSON object with the following fields:\n' +
 			baseFields +
 			matchingFields +
-			'\nIMPORTANT: Ensure all values are simple strings or arrays of strings. For salaryRange, min and max must be text strings, not objects.';
+			'\nIMPORTANT: Ensure all values are simple strings or arrays of strings. For salaryRange, min and max must be text strings, not objects.' +
+			(resumeData
+				? '\n\nSCORING RULES (CRITICAL):\n' +
+					'1. LOCATION COMPATIBILITY (MAJOR FACTOR): Compare job location requirements with candidate location:\n' +
+					'   - Perfect match (same country/region): No penalty\n' +
+					'   - Remote work allowed and candidate can work remotely: No penalty\n' +
+					'   - Location mismatch (e.g., "Remote-US" vs "Colombia"): Reduce score by 25-35 points\n' +
+					'   - Visa requirements not met: Reduce score by 30-40 points\n' +
+					'2. SKILL MATCHING:\n' +
+					'   - Required skills: Each missing required skill reduces score by 10-15 points\n' +
+					'   - Nice-to-have skills: Each missing nice-to-have skill reduces score by 3-5 points\n' +
+					'3. EXPERIENCE MATCHING:\n' +
+					'   - Years of experience: Significant mismatch reduces score by 10-20 points\n' +
+					'   - Relevant experience: Missing relevant experience reduces score by 15-25 points\n' +
+					'4. PERFECT MATCH CRITERIA:\n' +
+					'   - Award 100% when all required skills, location compatibility, and experience requirements are met\n' +
+					'   - If all requirements are met, "missing" array should be empty\n' +
+					'5. SUMMARY REQUIREMENTS:\n' +
+					'   - Always mention location compatibility\n' +
+					'   - For 100% matches, use celebratory language like "🎉 Perfect match!" or "Excellent fit!"\n' +
+					'   - For location mismatches, clearly state the impact\n' +
+					'   - Keep explanations concise and friendly'
+				: '');
 
 		const userPromptTemplate = resumeData
 			? 'Analyze this job listing and extract key information. Also analyze how well this candidate matches the job based on their resume data.\n\nJob listing: {{content}}\n\nCandidate resume data: {{resumeData}}'

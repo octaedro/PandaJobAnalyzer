@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Scoring Algorithm**: Fixed issue where perfect matches (100%) were incorrectly showing as 90% even when all requirements were met
+- **Location Scoring**: Implemented location compatibility as a major scoring factor (25-35 point deduction for mismatches like "Remote-US" vs "Colombia")
+
+### Added
+- **Match Analysis Summary**: Added new summary section in ranking tab that explains match analysis and location compatibility
+- **Celebratory Language**: Perfect matches now display celebratory messages like "🎉 Perfect match!" instead of formal text
+
+### Improved
+- **Scoring Logic**: More precise scoring rules that properly award 100% when all requirements are satisfied
+- **UI Feedback**: Better visual feedback for match analysis with dedicated summary section
+
 ## [1.1.0] - 2024-01-17
 
 ### Added
